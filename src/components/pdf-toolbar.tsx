@@ -633,7 +633,7 @@ export function PDFToolbar({
                   <TooltipContent>More options</TooltipContent>
                 </Tooltip>
                 <DropdownMenuContent align="end" className="w-48">
-                  {/* Stroke Width */}
+                  {/* Stroke Width - Primary mobile option for on-the-go editing */}
                   <div className="px-2 py-1.5 text-sm font-medium">Stroke Width</div>
                   <div className="px-2 py-2">
                     <Select value={strokeWidth.toString()} onValueChange={(value) => onStrokeWidthChange(parseInt(value))}>
@@ -649,8 +649,6 @@ export function PDFToolbar({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Page Actions - removed on mobile: Rotate / Delete Selected per request (keep only stroke width) */}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

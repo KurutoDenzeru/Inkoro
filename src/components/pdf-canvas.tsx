@@ -197,13 +197,23 @@ export function PDFCanvas({
     };
   }, [selectedAnnotationId, onAnnotationDelete, onAnnotationSelect]);
 
-  const getRelativePosition = useCallback((e: React.MouseEvent): Point => {
+  // Helper to extract coordinates from mouse or touch events
+  const getCoordinatesFromEvent = (e: React.MouseEvent | React.TouchEvent): { clientX: number; clientY: number } => {
+    if ('touches' in e && e.touches.length > 0) {
+      return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+    }
+    const mouseEvent = e as React.MouseEvent;
+    return { clientX: mouseEvent.clientX, clientY: mouseEvent.clientY };
+  };
+
+  const getRelativePosition = useCallback((e: React.MouseEvent | React.TouchEvent): Point => {
     const target = e.currentTarget as HTMLDivElement;
     const rect = target.getBoundingClientRect();
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
     // Convert client coordinates to unscaled PDF coordinates so annotations remain consistent with the underlying document size
     return {
-      x: (e.clientX - rect.left) / scale,
-      y: (e.clientY - rect.top) / scale,
+      x: (clientX - rect.left) / scale,
+      y: (clientY - rect.top) / scale,
     };
   }, [scale]);
 
@@ -304,7 +314,7 @@ export function PDFCanvas({
   };
 
   // Drag handlers for moving annotations
-  const handleAnnotationMouseDown = (e: React.MouseEvent, annotation: Annotation) => {
+  const handleAnnotationMouseDown = (e: React.MouseEvent | React.TouchEvent, annotation: Annotation) => {
     if (currentTool !== 'select') return;
 
     // Don't allow dragging lines/arrows directly - only resize via endpoints
@@ -326,8 +336,9 @@ export function PDFCanvas({
     if (!pageContainer) return;
     
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
     
     setIsDragging(true);
     setDragAnnotationId(annotation.id);
@@ -335,7 +346,7 @@ export function PDFCanvas({
       x: mouseX - annotation.position.x,
       y: mouseY - annotation.position.y,
     });
-  };  const handleAnnotationMouseMove = (e: React.MouseEvent) => {
+  };  const handleAnnotationMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !dragAnnotationId) return;
 
     hasDraggedRef.current = true;
@@ -346,8 +357,9 @@ export function PDFCanvas({
     // Get the current mouse position relative to the page
     const pageContainer = e.currentTarget as HTMLElement;
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
 
     const newPosition = {
       x: mouseX - dragOffset.x,
@@ -387,7 +399,7 @@ export function PDFCanvas({
   };
 
   // Resize handlers for resizing annotations
-  const handleResizeMouseDown = (e: React.MouseEvent, annotationId: string, handle: string) => {
+  const handleResizeMouseDown = (e: React.MouseEvent | React.TouchEvent, annotationId: string, handle: string) => {
     if (currentTool !== 'select') return;
 
     e.stopPropagation();
@@ -397,8 +409,9 @@ export function PDFCanvas({
     if (!pageContainer) return;
 
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
 
     const annotation = annotations.find(a => a.id === annotationId);
     if (!annotation) return;
@@ -433,7 +446,7 @@ export function PDFCanvas({
     }
   };
 
-  const handleResizeMouseMove = (e: React.MouseEvent) => {
+  const handleResizeMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isResizing || !resizeAnnotationId || !resizeHandle) return;
 
     const annotation = annotations.find(a => a.id === resizeAnnotationId);
@@ -441,8 +454,9 @@ export function PDFCanvas({
 
     const pageContainer = e.currentTarget as HTMLElement;
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
 
     const deltaX = mouseX - resizeStartPos.x;
     const deltaY = mouseY - resizeStartPos.y;
@@ -562,7 +576,7 @@ export function PDFCanvas({
   };
 
   // Rotation handlers for rotating annotations
-  const handleRotateMouseDown = (e: React.MouseEvent, annotationId: string) => {
+  const handleRotateMouseDown = (e: React.MouseEvent | React.TouchEvent, annotationId: string) => {
     if (currentTool !== 'select') return;
 
     e.stopPropagation();
@@ -579,8 +593,9 @@ export function PDFCanvas({
     const centerY = bounds.y + bounds.height / 2;
 
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
 
     // Calculate initial angle from center to mouse
     const deltaX = mouseX - centerX;
@@ -593,7 +608,7 @@ export function PDFCanvas({
     setRotateStartRotation(annotation.rotation || 0);
   };
 
-  const handleRotateMouseMove = (e: React.MouseEvent) => {
+  const handleRotateMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isRotating || !rotateAnnotationId) return;
 
     const annotation = annotations.find(a => a.id === rotateAnnotationId);
@@ -605,8 +620,9 @@ export function PDFCanvas({
     const centerY = bounds.y + bounds.height / 2;
 
     const rect = pageContainer.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / scale;
-    const mouseY = (e.clientY - rect.top) / scale;
+    const { clientX, clientY } = getCoordinatesFromEvent(e);
+    const mouseX = (clientX - rect.left) / scale;
+    const mouseY = (clientY - rect.top) / scale;
 
     // Calculate current angle from center to mouse
     const deltaX = mouseX - centerX;
@@ -840,6 +856,9 @@ export function PDFCanvas({
               cursor: handle.cursor,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
+            onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
+            onTouchMove={(e) => handleResizeMouseMove(e)}
+            onTouchEnd={() => handleResizeMouseUp()}
           />
         ))}
 
@@ -859,6 +878,9 @@ export function PDFCanvas({
               cursor: handle.cursor,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
+            onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
+            onTouchMove={(e) => handleResizeMouseMove(e)}
+            onTouchEnd={() => handleResizeMouseUp()}
           />
         ))}
 
@@ -873,6 +895,9 @@ export function PDFCanvas({
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
           }}
           onMouseDown={(e) => handleRotateMouseDown(e, annotation.id)}
+          onTouchStart={(e) => handleRotateMouseDown(e, annotation.id)}
+          onTouchMove={(e) => handleRotateMouseMove(e)}
+          onTouchEnd={() => handleRotateMouseUp()}
         />
       </div>
     );
@@ -882,6 +907,9 @@ export function PDFCanvas({
     const isSelected = annotation.id === selectedAnnotationId;
     const commonProps = {
       onMouseDown: (e: React.MouseEvent) => handleAnnotationMouseDown(e, annotation),
+      onTouchStart: (e: React.TouchEvent) => handleAnnotationMouseDown(e, annotation),
+      onTouchMove: (e: React.TouchEvent) => handleAnnotationMouseMove(e),
+      onTouchEnd: () => handleAnnotationMouseUp(),
       onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
         onAnnotationSelect(annotation.id);
