@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { Tool, Annotation, Point } from '@/types/pdf';
@@ -881,7 +881,6 @@ export function PDFCanvas({
   const renderAnnotation = (annotation: Annotation) => {
     const isSelected = annotation.id === selectedAnnotationId;
     const commonProps = {
-      key: annotation.id,
       onMouseDown: (e: React.MouseEvent) => handleAnnotationMouseDown(e, annotation),
       onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -1147,11 +1146,11 @@ export function PDFCanvas({
     })();
 
     return (
-      <>
+      <React.Fragment key={annotation.id}>
         {element}
         {renderBoundingBox(annotation)}
         {renderHoverHighlight(annotation)}
-      </>
+      </React.Fragment>
     );
   };
 
