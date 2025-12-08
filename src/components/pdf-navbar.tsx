@@ -1,4 +1,4 @@
-import { Download, Undo, Redo, Trash2, RotateCw, FileIcon, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info } from 'lucide-react';
+import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info } from 'lucide-react';
 import { useState } from 'react';
 
 // Components
@@ -64,12 +64,10 @@ export function PDFNavbar({
     <TooltipProvider>
       <nav className="w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b">
         <div className="flex items-start justify-between px-4 gap-2 py-1.5">
-          {/* Left Section - Favicon and Filename + Menubar */}
+          {/* Left Section - Brand Logo and Filename + Menubar */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Favicon - 2x2 size (w-10 h-10) */}
-            <div className="flex items-center justify-center w-10 h-10 rounded bg-primary/10 shrink-0">
-              <FileIcon className="w-6 h-6 text-primary" />
-            </div>
+            {/* Brand Logo */}
+            <img src="/brand.png" alt="Inkoro" className="h-12 w-12 shrink-0" />
 
             {/* Filename and Menubar Column */}
             <div className="flex flex-col items-start justify-start gap-0 flex-1 min-w-0">
@@ -94,7 +92,7 @@ export function PDFNavbar({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onNewSession}>
-                      <FileIcon className="w-4 h-4 mr-2" />
+                      <FileText className="w-4 h-4 mr-2" />
                       <span>New Session</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onResetSession}>
