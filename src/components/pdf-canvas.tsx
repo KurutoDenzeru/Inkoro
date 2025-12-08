@@ -210,7 +210,6 @@ export function PDFCanvas({
     const target = e.currentTarget as HTMLDivElement;
     const rect = target.getBoundingClientRect();
     const { clientX, clientY } = getCoordinatesFromEvent(e);
-    // Convert client coordinates to unscaled PDF coordinates so annotations remain consistent with the underlying document size
     return {
       x: (clientX - rect.left) / scale,
       y: (clientY - rect.top) / scale,
@@ -218,24 +217,19 @@ export function PDFCanvas({
   }, [scale]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // If it's select mode or a tool that does not support drawing, do nothing
     if (currentTool === 'select' || currentTool === 'signature' || currentTool === 'image') return;
 
     const point = getRelativePosition(e);
     setIsDrawing(true);
     setStartPoint(point);
-    // We intentionally do not handle freehand 'pen' drawing here - signature insertion
-    // is handled via the SignatureDialog and inserted as an image-type annotation.
   };
 
   const handleMouseMove = (_e: React.MouseEvent) => {
     if (!isDrawing || !startPoint) return;
-    // No freehand drawing support for signature - other shapes update via drag
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!isDrawing || !startPoint) {
-      // If not drawing, we're in select mode or just clicked
       return;
     }
 
@@ -291,8 +285,6 @@ export function PDFCanvas({
         annotation.endPoint = endPoint;
         break;
         case 'pen':
-          // Legacy: if we encounter a pen annotation in state, we won't create new ones via UI.
-          // If pen points exist (legacy), normalize bounds for proper rendering.
           if (currentPoints && currentPoints.length > 0) {
             annotation.points = currentPoints;
             const xs = currentPoints.map(p => p.x);
@@ -303,7 +295,6 @@ export function PDFCanvas({
           }
           break;
         case 'signature':
-          // signature annotations are inserted via the Signature Dialog and already contain imageData, width & height
           break;
     }
 
@@ -403,7 +394,10 @@ export function PDFCanvas({
     if (currentTool !== 'select') return;
 
     e.stopPropagation();
-    e.preventDefault();
+    // Only call preventDefault on mouse events; touch events are passive
+    if ('preventDefault' in e && e.type !== 'touchstart') {
+      e.preventDefault();
+    }
 
     const pageContainer = (e.target as HTMLElement).closest('[data-page-num]');
     if (!pageContainer) return;
@@ -826,7 +820,7 @@ export function PDFCanvas({
     
     // Make handles responsive - bigger on mobile but not too large
     const handleSize = isMobile ? 28 : 12;
-    const handleOffset = isMobile ? handleSize / 2 : 6;
+    const handleOffset = isMobile ? handleSize / 2 + 2 : 6;
 
     const cornerHandles = [
       { handle: 'tl', top: -handleOffset, left: -handleOffset, cursor: 'nw-resize' },
@@ -863,12 +857,11 @@ export function PDFCanvas({
             key={handle.handle}
             className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
-              ...{
-                top: handle.top,
-                left: handle.left,
-                right: handle.right,
-                bottom: handle.bottom,
-              },
+              top: handle.top !== undefined ? handle.top : 'auto',
+              left: handle.left !== undefined ? handle.left : 'auto',
+              right: handle.right !== undefined ? handle.right : 'auto',
+              bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
+              transform: 'translate(-50%, -50%)',
               cursor: handle.cursor,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -884,13 +877,11 @@ export function PDFCanvas({
             key={handle.handle}
             className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
-              ...{
-                top: handle.top,
-                left: handle.left,
-                right: handle.right,
-                bottom: handle.bottom,
-                transform: handle.transform,
-              },
+              top: handle.top !== undefined ? handle.top : 'auto',
+              left: handle.left,
+              right: handle.right !== undefined ? handle.right : 'auto',
+              bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
+              transform: handle.transform ? `${handle.transform} translate(-50%, -50%)` : 'translate(-50%, -50%)',
               cursor: handle.cursor,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -1325,8 +1316,6 @@ export function PDFCanvas({
                   }
                 }}
                 onClick={() => {
-                  // page clicked: event
-                  // Deselect annotations when clicking in select mode
                   if (currentTool === 'select') {
                     onAnnotationSelect(null);
                   }
@@ -1339,8 +1328,6 @@ export function PDFCanvas({
                     maxWidth: '100%',
                     maxHeight: '100%',
                     display: 'flex',
-                    // On mobile we top-align the page so it fills the viewport from the top
-                    // and avoids extra whitespace below; on desktop keep centered vertically
                     alignItems: isMobile ? 'flex-start' : 'center',
                     justifyContent: 'center',
                   }}
