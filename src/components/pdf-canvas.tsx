@@ -790,14 +790,14 @@ export function PDFCanvas({
 
     // Special handling for lines and arrows - show only endpoint handles
     if ((annotation.type === 'line' || annotation.type === 'arrow') && annotation.endPoint) {
-      const handleSize = isMobile ? 40 : 16;
+      const handleSize = isMobile ? 28 : 16;
       const handleOffset = isMobile ? handleSize / 2 : 8;
       
       return (
         <>
           {/* Start point handle */}
           <div
-            className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               left: annotation.position.x - handleOffset,
               top: annotation.position.y - handleOffset,
@@ -808,7 +808,7 @@ export function PDFCanvas({
           />
           {/* End point handle */}
           <div
-            className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               left: annotation.endPoint.x - handleOffset,
               top: annotation.endPoint.y - handleOffset,
@@ -824,8 +824,8 @@ export function PDFCanvas({
     const bounds = getAnnotationBounds(annotation);
     const padding = 8;
     
-    // Make handles bigger on mobile
-    const handleSize = isMobile ? 40 : 12;
+    // Make handles responsive - bigger on mobile but not too large
+    const handleSize = isMobile ? 28 : 12;
     const handleOffset = isMobile ? handleSize / 2 : 6;
 
     const cornerHandles = [
@@ -861,7 +861,7 @@ export function PDFCanvas({
         {cornerHandles.map((handle) => (
           <div
             key={handle.handle}
-            className={`${isMobile ? 'w-10 h-10' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               ...{
                 top: handle.top,
@@ -882,7 +882,7 @@ export function PDFCanvas({
         {edgeHandles.map((handle) => (
           <div
             key={handle.handle}
-            className={`${isMobile ? 'w-10 h-10' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               ...{
                 top: handle.top,
@@ -902,9 +902,9 @@ export function PDFCanvas({
 
         {/* Rotation handle - circular handle at top center */}
         <div
-          className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors absolute`}
+          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors absolute`}
           style={{
-            top: isMobile ? -28 : -20,
+            top: isMobile ? -22 : -20,
             left: '50%',
             transform: 'translateX(-50%)',
             cursor: 'grab',
