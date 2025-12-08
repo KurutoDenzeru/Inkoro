@@ -109,10 +109,10 @@ export function PDFCanvas({
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
-      console.log('PDFCanvas: Created file URL:', url);
+      // debug: created file URL
       setFileUrl(url);
       return () => {
-        console.log('PDFCanvas: Revoking file URL');
+        // debug: revoking file URL
         URL.revokeObjectURL(url);
       };
     }
@@ -1182,7 +1182,7 @@ export function PDFCanvas({
   };
 
   if (!file) {
-    console.log('PDFCanvas: No file provided');
+    // PDFCanvas: No file provided
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground">No PDF loaded</p>
@@ -1191,7 +1191,7 @@ export function PDFCanvas({
   }
 
   if (!fileUrl) {
-    console.log('PDFCanvas: File URL not ready yet');
+    // PDFCanvas: File URL not ready yet
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground">Loading PDF...</p>
@@ -1199,13 +1199,11 @@ export function PDFCanvas({
     );
   }
 
-  console.log('PDFCanvas: Rendering with file:', file.name);
-  console.log('PDFCanvas: numPages:', numPages);
-  console.log('PDFCanvas: currentPage:', currentPage);
+  // PDFCanvas: rendering
 
   // Render at least one page initially even if numPages is 0
   const pagesToRender = numPages > 0 ? numPages : 1;
-  console.log('PDFCanvas: Pages to render:', pagesToRender);
+  // PDFCanvas: pages to render
 
   return (
     <div className="flex-1 flex flex-col w-full bg-muted/30 relative overflow-hidden">
@@ -1242,7 +1240,7 @@ export function PDFCanvas({
                 onMouseDown={(e) => {
                   // Check if clicking on a different page to focus it
                   if (pageNum !== currentPage) {
-                    console.log('Mouse down on different page:', pageNum, 'Current:', currentPage);
+                    // mouse down on different page event
                     onPageChange(pageNum);
                   }
                   // Continue with drawing if not in select mode
@@ -1284,7 +1282,7 @@ export function PDFCanvas({
                   }
                 }}
                 onClick={() => {
-                  console.log('Page clicked:', pageNum, 'Current page:', currentPage);
+                  // page clicked: event
                   // Deselect annotations when clicking in select mode
                   if (currentTool === 'select') {
                     onAnnotationSelect(null);
@@ -1317,7 +1315,7 @@ export function PDFCanvas({
                     <Document
                       file={fileUrl}
                       onLoadSuccess={({ numPages }) => {
-                        console.log('PDF loaded successfully. Total pages:', numPages);
+                        // PDF loaded successfully
                         if (pageNum === 1) {
                           onNumPagesChange(numPages);
                         }
@@ -1333,7 +1331,7 @@ export function PDFCanvas({
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
                       onLoadSuccess={() => {
-                        console.log('Page', pageNum, 'rendered successfully');
+                        // Page rendered successfully
                       }}
                       onLoadError={(error) => {
                         console.error('Error loading page', pageNum, ':', error);

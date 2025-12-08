@@ -57,7 +57,7 @@ export function PDFEditor() {
     if (savedSession) {
       try {
         const session = JSON.parse(savedSession);
-        console.log('Loaded session from localStorage:', session);
+        // loaded session from localStorage
 
         // Only restore if file data exists
         if (session.fileName && session.fileData) {
@@ -176,7 +176,7 @@ export function PDFEditor() {
           timestamp: new Date().toISOString(),
         };
         localStorage.setItem('pdfEditorSession', JSON.stringify(session));
-        console.log('Saved session to localStorage');
+        // saved session to localStorage
       }
     };
     reader.onerror = () => {
@@ -277,10 +277,7 @@ export function PDFEditor() {
   }, [selectedAnnotationId, pdfState.annotations, clipboard, addToHistory]);
 
   const handleFileSelect = (file: File) => {
-    console.log('File selected:', file);
-    console.log('File name:', file.name);
-    console.log('File type:', file.type);
-    console.log('File size:', file.size);
+    // File selected
     setPdfState(prev => ({
       ...prev,
       file,
@@ -1341,11 +1338,7 @@ export function PDFEditor() {
     return <PDFUploadZone onFileSelect={handleFileSelect} />;
   }
 
-  console.log('PDFEditor: Rendering editor with state:', {
-    file: pdfState.file?.name,
-    numPages: pdfState.numPages,
-    currentPage: pdfState.currentPage,
-  });
+  // PDFEditor: rendering state
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">

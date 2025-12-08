@@ -60,10 +60,10 @@ export function PDFSidebar({
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
-      console.log('PDFSidebar: Created file URL:', url);
+      // PDFSidebar: created file URL
       setFileUrl(url);
       return () => {
-        console.log('PDFSidebar: Revoking file URL');
+        // PDFSidebar: revoking file URL
         URL.revokeObjectURL(url);
       };
     }
@@ -133,7 +133,7 @@ export function PDFSidebar({
                 </div>
               ) : (
                 Array.from({ length: numPages }, (_, i) => i + 1).map((pageNumber) => {
-                  console.log('Rendering sidebar page:', pageNumber, 'of', numPages);
+                  // rendering sidebar page
                   return (
                     <div
                       key={pageNumber}
