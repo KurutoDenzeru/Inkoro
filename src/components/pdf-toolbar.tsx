@@ -650,17 +650,7 @@ export function PDFToolbar({
                     </Select>
                   </div>
 
-                  <DropdownMenuSeparator />
-
-                  {/* Page Actions */}
-                  <DropdownMenuItem onClick={onRotate}>
-                    <RotateCw className="w-4 h-4 mr-2" />
-                    Rotate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDeleteSelected} disabled={!hasSelection}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Selected
-                  </DropdownMenuItem>
+                  {/* Page Actions - removed on mobile: Rotate / Delete Selected per request (keep only stroke width) */}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
