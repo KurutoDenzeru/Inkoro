@@ -849,6 +849,7 @@ export function PDFCanvas({
           transform: `rotate(${annotation.rotation || 0}deg)`,
           transformOrigin: 'center',
           transition: 'transform 0.05s ease-out',
+          touchAction: 'none',
         }}
       >
         {/* Corner handles */}
@@ -895,9 +896,9 @@ export function PDFCanvas({
         <div
           className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors absolute`}
           style={{
-            top: isMobile ? -22 : -20,
+            top: isMobile ? -32 : -28,
             left: '50%',
-            transform: 'translateX(-50%)',
+            transform: 'translate(-50%, -50%)',
             cursor: 'grab',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
           }}
