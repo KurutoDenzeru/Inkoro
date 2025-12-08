@@ -284,18 +284,18 @@ export function PDFCanvas({
       case 'arrow':
         annotation.endPoint = endPoint;
         break;
-        case 'pen':
-          if (currentPoints && currentPoints.length > 0) {
-            annotation.points = currentPoints;
-            const xs = currentPoints.map(p => p.x);
-            const ys = currentPoints.map(p => p.y);
-            const minX = Math.min(...xs);
-            const minY = Math.min(...ys);
-            annotation.position = { x: minX, y: minY };
-          }
-          break;
-        case 'signature':
-          break;
+      case 'pen':
+        if (currentPoints && currentPoints.length > 0) {
+          annotation.points = currentPoints;
+          const xs = currentPoints.map(p => p.x);
+          const ys = currentPoints.map(p => p.y);
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          annotation.position = { x: minX, y: minY };
+        }
+        break;
+      case 'signature':
+        break;
     }
 
     onAnnotationAdd(annotation);
@@ -325,19 +325,19 @@ export function PDFCanvas({
     // Get position relative to the page container (parent)
     const pageContainer = (e.target as HTMLElement).closest('[data-page-num]');
     if (!pageContainer) return;
-    
+
     const rect = pageContainer.getBoundingClientRect();
     const { clientX, clientY } = getCoordinatesFromEvent(e);
     const mouseX = (clientX - rect.left) / scale;
     const mouseY = (clientY - rect.top) / scale;
-    
+
     setIsDragging(true);
     setDragAnnotationId(annotation.id);
     setDragOffset({
       x: mouseX - annotation.position.x,
       y: mouseY - annotation.position.y,
     });
-  };  const handleAnnotationMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+  }; const handleAnnotationMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !dragAnnotationId) return;
 
     hasDraggedRef.current = true;
@@ -467,9 +467,9 @@ export function PDFCanvas({
       if (resizeHandle === 'start') {
         // Moving start point - update position
         onAnnotationUpdate(resizeAnnotationId, {
-          position: { 
-            x: resizeStartBounds.x + deltaX, 
-            y: resizeStartBounds.y + deltaY 
+          position: {
+            x: resizeStartBounds.x + deltaX,
+            y: resizeStartBounds.y + deltaY
           },
         });
         return;
@@ -578,7 +578,9 @@ export function PDFCanvas({
     if (currentTool !== 'select') return;
 
     e.stopPropagation();
-    e.preventDefault();
+    if ('preventDefault' in e && e.type !== 'touchstart') {
+      e.preventDefault();
+    }
 
     const pageContainer = (e.target as HTMLElement).closest('[data-page-num]');
     if (!pageContainer) return;
@@ -650,7 +652,7 @@ export function PDFCanvas({
   const handleCanvasDragStart = (e: React.MouseEvent) => {
     // Only allow canvas dragging in select mode and when zoomed in
     if (currentTool !== 'select' || scale <= 1) return;
-    
+
     setIsCanvasDragging(true);
     setCanvasDragStart({ x: e.clientX, y: e.clientY });
     setCanvasScrollStart({
@@ -786,7 +788,7 @@ export function PDFCanvas({
     if ((annotation.type === 'line' || annotation.type === 'arrow') && annotation.endPoint) {
       const handleSize = isMobile ? 28 : 16;
       const handleOffset = isMobile ? handleSize / 2 : 8;
-      
+
       return (
         <>
           {/* Start point handle */}
@@ -817,7 +819,7 @@ export function PDFCanvas({
 
     const bounds = getAnnotationBounds(annotation);
     const padding = 8;
-    
+
     // Make handles responsive - bigger on mobile but not too large
     const handleSize = isMobile ? 28 : 12;
     const handleOffset = isMobile ? handleSize / 2 + 2 : 6;
@@ -1264,9 +1266,8 @@ export function PDFCanvas({
                 ref={(el) => {
                   pageRefsMap.current[pageNum] = el;
                 }}
-                className={`relative rounded-md bg-white transition-all duration-300 ease-out ${pageNum === currentPage ? 'border-2 border-gray-400 shadow-lg' : 'border border-gray-200'} ${
-                  viewMode === 'single' ? 'mx-auto' : ''
-                }`}
+                className={`relative rounded-md bg-white transition-all duration-300 ease-out ${pageNum === currentPage ? 'border-2 border-gray-400 shadow-lg' : 'border border-gray-200'} ${viewMode === 'single' ? 'mx-auto' : ''
+                  }`}
                 style={{
                   width: viewMode === 'multiple' ? '100%' : 'fit-content',
                   maxWidth: viewMode === 'single' ? '90vw' : 'none',
@@ -1355,26 +1356,26 @@ export function PDFCanvas({
                         console.error('Error loading PDF:', error);
                       }}
                     >
-                    <Page
-                      pageNumber={pageNum}
-                      scale={1}
-                      rotate={rotation}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      onLoadSuccess={() => {
-                        // Page rendered successfully
-                      }}
-                      onLoadError={(error) => {
-                        console.error('Error loading page', pageNum, ':', error);
-                      }}
-                    />
-                  </Document>
+                      <Page
+                        pageNumber={pageNum}
+                        scale={1}
+                        rotate={rotation}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        onLoadSuccess={() => {
+                          // Page rendered successfully
+                        }}
+                        onLoadError={(error) => {
+                          console.error('Error loading page', pageNum, ':', error);
+                        }}
+                      />
+                    </Document>
 
-                  {/* Render annotations for this page */}
-                  {annotations
-                    .filter(a => a.pageNumber === pageNum)
-                    .map(renderAnnotation)}
-                </div>
+                    {/* Render annotations for this page */}
+                    {annotations
+                      .filter(a => a.pageNumber === pageNum)
+                      .map(renderAnnotation)}
+                  </div>
                 </div>
 
                 {/* Render current drawing */}
