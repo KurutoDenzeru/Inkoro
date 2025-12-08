@@ -458,8 +458,12 @@ export function PDFCanvas({
     const mouseX = (clientX - rect.left) / scale;
     const mouseY = (clientY - rect.top) / scale;
 
-    const deltaX = mouseX - resizeStartPos.x;
-    const deltaY = mouseY - resizeStartPos.y;
+    // Apply damping factor for touch events to reduce sensitivity
+    const isTouchEvent = 'touches' in e;
+    const dampingFactor = isTouchEvent ? 0.7 : 1.0;
+
+    let deltaX = (mouseX - resizeStartPos.x) * dampingFactor;
+    let deltaY = (mouseY - resizeStartPos.y) * dampingFactor;
 
     const minSize = 20;
     let newBounds = { ...resizeStartBounds };
@@ -629,8 +633,13 @@ export function PDFCanvas({
     const deltaY = mouseY - centerY;
     const currentAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
 
-    // Calculate rotation delta
-    const angleDelta = currentAngle - rotateStartAngle;
+    // Apply damping factor for touch events to reduce sensitivity
+    const isTouchEvent = 'touches' in e;
+    const dampingFactor = isTouchEvent ? 0.7 : 1.0;
+
+    // Calculate rotation delta with damping
+    let angleDelta = currentAngle - rotateStartAngle;
+    angleDelta *= dampingFactor;
     const newRotation = (rotateStartRotation + angleDelta) % 360;
 
     onAnnotationUpdate(rotateAnnotationId, { rotation: newRotation });
@@ -781,14 +790,17 @@ export function PDFCanvas({
 
     // Special handling for lines and arrows - show only endpoint handles
     if ((annotation.type === 'line' || annotation.type === 'arrow') && annotation.endPoint) {
+      const handleSize = isMobile ? 40 : 16;
+      const handleOffset = isMobile ? handleSize / 2 : 8;
+      
       return (
         <>
           {/* Start point handle */}
           <div
-            className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors"
+            className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
-              left: annotation.position.x - 8,
-              top: annotation.position.y - 8,
+              left: annotation.position.x - handleOffset,
+              top: annotation.position.y - handleOffset,
               cursor: 'grab',
               zIndex: 10,
             }}
@@ -796,10 +808,10 @@ export function PDFCanvas({
           />
           {/* End point handle */}
           <div
-            className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors"
+            className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-primary rounded-full pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
-              left: annotation.endPoint.x - 8,
-              top: annotation.endPoint.y - 8,
+              left: annotation.endPoint.x - handleOffset,
+              top: annotation.endPoint.y - handleOffset,
               cursor: 'grab',
               zIndex: 10,
             }}
@@ -811,19 +823,23 @@ export function PDFCanvas({
 
     const bounds = getAnnotationBounds(annotation);
     const padding = 8;
+    
+    // Make handles bigger on mobile
+    const handleSize = isMobile ? 40 : 12;
+    const handleOffset = isMobile ? handleSize / 2 : 6;
 
     const cornerHandles = [
-      { handle: 'tl', top: -4, left: -4, cursor: 'nw-resize' },
-      { handle: 'tr', top: -4, right: -4, cursor: 'ne-resize' },
-      { handle: 'bl', bottom: -4, left: -4, cursor: 'sw-resize' },
-      { handle: 'br', bottom: -4, right: -4, cursor: 'se-resize' },
+      { handle: 'tl', top: -handleOffset, left: -handleOffset, cursor: 'nw-resize' },
+      { handle: 'tr', top: -handleOffset, right: -handleOffset, cursor: 'ne-resize' },
+      { handle: 'bl', bottom: -handleOffset, left: -handleOffset, cursor: 'sw-resize' },
+      { handle: 'br', bottom: -handleOffset, right: -handleOffset, cursor: 'se-resize' },
     ];
 
     const edgeHandles = [
-      { handle: 'top', top: -4, left: '50%', transform: 'translateX(-50%)', cursor: 'n-resize' },
-      { handle: 'bottom', bottom: -4, left: '50%', transform: 'translateX(-50%)', cursor: 's-resize' },
-      { handle: 'left', top: '50%', left: -4, transform: 'translateY(-50%)', cursor: 'w-resize' },
-      { handle: 'right', top: '50%', right: -4, transform: 'translateY(-50%)', cursor: 'e-resize' },
+      { handle: 'top', top: -handleOffset, left: '50%', transform: 'translateX(-50%)', cursor: 'n-resize' },
+      { handle: 'bottom', bottom: -handleOffset, left: '50%', transform: 'translateX(-50%)', cursor: 's-resize' },
+      { handle: 'left', top: '50%', left: -handleOffset, transform: 'translateY(-50%)', cursor: 'w-resize' },
+      { handle: 'right', top: '50%', right: -handleOffset, transform: 'translateY(-50%)', cursor: 'e-resize' },
     ];
 
     return (
@@ -845,7 +861,7 @@ export function PDFCanvas({
         {cornerHandles.map((handle) => (
           <div
             key={handle.handle}
-            className="absolute w-3 h-3 bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors"
+            className={`${isMobile ? 'w-10 h-10' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               ...{
                 top: handle.top,
@@ -866,7 +882,7 @@ export function PDFCanvas({
         {edgeHandles.map((handle) => (
           <div
             key={handle.handle}
-            className="absolute w-3 h-3 bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors"
+            className={`${isMobile ? 'w-10 h-10' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
             style={{
               ...{
                 top: handle.top,
@@ -886,9 +902,9 @@ export function PDFCanvas({
 
         {/* Rotation handle - circular handle at top center */}
         <div
-          className="absolute w-4 h-4 bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors"
+          className={`${isMobile ? 'w-10 h-10' : 'w-4 h-4'} bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors absolute`}
           style={{
-            top: -20,
+            top: isMobile ? -28 : -20,
             left: '50%',
             transform: 'translateX(-50%)',
             cursor: 'grab',
