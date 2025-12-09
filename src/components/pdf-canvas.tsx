@@ -460,12 +460,16 @@ export function PDFCanvas({
     const mouseX = (clientX - rect.left) / scale;
     const mouseY = (clientY - rect.top) / scale;
 
-    // Apply damping factor for touch events to reduce sensitivity
+    // Apply damping factor for touch events to reduce sensitivity and jitter
     const isTouchEvent = 'touches' in e;
-    const dampingFactor = isTouchEvent ? 0.7 : 1.0;
+    const dampingFactor = isTouchEvent ? 0.5 : 1.0;
 
     let deltaX = (mouseX - resizeStartPos.x) * dampingFactor;
     let deltaY = (mouseY - resizeStartPos.y) * dampingFactor;
+
+    // Round small deltas to prevent micro-jitter on touch
+    if (Math.abs(deltaX) < 0.5) deltaX = 0;
+    if (Math.abs(deltaY) < 0.5) deltaY = 0;
 
     const minSize = 20;
     let newBounds = { ...resizeStartBounds };
@@ -637,9 +641,9 @@ export function PDFCanvas({
     const deltaY = mouseY - centerY;
     const currentAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
 
-    // Apply damping factor for touch events to reduce sensitivity
+    // Apply damping factor for touch events to reduce sensitivity and jitter
     const isTouchEvent = 'touches' in e;
-    const dampingFactor = isTouchEvent ? 0.7 : 1.0;
+    const dampingFactor = isTouchEvent ? 0.5 : 1.0;
 
     // Calculate rotation delta with damping
     let angleDelta = currentAngle - rotateStartAngle;
@@ -693,11 +697,15 @@ export function PDFCanvas({
     const isInteracting = isDragging || isResizing || isRotating || isCanvasDragging;
     if (isInteracting) {
       container.style.touchAction = 'none';
+      // Also prevent body scroll on mobile during interactions
+      document.body.style.overscrollBehavior = 'none';
     } else {
       container.style.touchAction = '';
+      document.body.style.overscrollBehavior = '';
     }
     return () => {
       if (container) container.style.touchAction = '';
+      document.body.style.overscrollBehavior = '';
     };
   }, [isDragging, isResizing, isRotating, isCanvasDragging]);
 
@@ -859,10 +867,10 @@ export function PDFCanvas({
     ];
 
     const edgeHandles = [
-      { handle: 'top', top: -handleOffset, left: '50%', transform: 'translateX(-50%)', cursor: 'n-resize' },
-      { handle: 'bottom', bottom: -handleOffset, left: '50%', transform: 'translateX(-50%)', cursor: 's-resize' },
-      { handle: 'left', top: '50%', left: -handleOffset, transform: 'translateY(-50%)', cursor: 'w-resize' },
-      { handle: 'right', top: '50%', right: -handleOffset, transform: 'translateY(-50%)', cursor: 'e-resize' },
+      { handle: 'top', top: -handleOffset, left: '50%', cursor: 'n-resize' },
+      { handle: 'bottom', bottom: -handleOffset, left: '50%', cursor: 's-resize' },
+      { handle: 'left', top: '50%', left: -handleOffset, cursor: 'w-resize' },
+      { handle: 'right', top: '50%', right: -handleOffset, cursor: 'e-resize' },
     ];
 
     return (
@@ -887,7 +895,7 @@ export function PDFCanvas({
         {cornerHandles.map((handle) => (
           <div
             key={handle.handle}
-            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
             style={{
               top: handle.top !== undefined ? handle.top : 'auto',
               left: handle.left !== undefined ? handle.left : 'auto',
@@ -898,6 +906,7 @@ export function PDFCanvas({
               touchAction: 'none' as any,
               WebkitTapHighlightColor: 'transparent' as any,
               zIndex: 20,
+              borderColor: 'black',
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
             onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -910,16 +919,18 @@ export function PDFCanvas({
         {edgeHandles.map((handle) => (
           <div
             key={handle.handle}
-            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-primary rounded-sm pointer-events-auto hover:bg-primary transition-colors absolute`}
+            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
             style={{
               top: handle.top !== undefined ? handle.top : 'auto',
-              left: handle.left,
+              left: handle.left !== undefined ? handle.left : 'auto',
               right: handle.right !== undefined ? handle.right : 'auto',
               bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
-              transform: handle.transform ? `${handle.transform} translate(-50%, -50%)` : 'translate(-50%, -50%)',
+              transform: 'translate(-50%, -50%)',
               cursor: handle.cursor,
               touchAction: 'none' as any,
               WebkitTapHighlightColor: 'transparent' as any,
+              zIndex: 20,
+              borderColor: 'black',
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
             onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -930,7 +941,7 @@ export function PDFCanvas({
 
         {/* Rotation handle - circular handle at top center */}
         <div
-          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-yellow-500 rounded-full pointer-events-auto hover:bg-yellow-500 transition-colors absolute`}
+          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-black rounded-full pointer-events-auto absolute transition-colors hover:bg-red-500`}
           style={{
             top: isMobile ? -32 : -28,
             left: '50%',
@@ -940,6 +951,7 @@ export function PDFCanvas({
             WebkitTapHighlightColor: 'transparent' as any,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
             zIndex: 20,
+            borderColor: 'black',
           }}
           onMouseDown={(e) => handleRotateMouseDown(e, annotation.id)}
           onTouchStart={(e) => handleRotateMouseDown(e, annotation.id)}
