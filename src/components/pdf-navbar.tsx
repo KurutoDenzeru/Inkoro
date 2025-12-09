@@ -1,5 +1,6 @@
 import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info } from 'lucide-react';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Components
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export function PDFNavbar({
   onViewModeChange,
 }: PDFNavbarProps) {
   const MIN_SCALE = 0.4;
+  const isMobile = useIsMobile();
   const [howToOpen, setHowToOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -197,7 +199,8 @@ export function PDFNavbar({
                     <DropdownMenuSeparator />
 
                     {/* View Mode */}
-                    <div className="px-2 py-1.5">
+                    {!isMobile && (
+                      <div className="px-2 py-1.5">
                       <p className="text-xs font-semibold text-muted-foreground mb-2">View Mode</p>
                       <div className="flex gap-1">
                         <Button
@@ -219,7 +222,8 @@ export function PDFNavbar({
                           Multiple
                         </Button>
                       </div>
-                    </div>
+                      </div>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onRotate}>
                       <RotateCw className="w-4 h-4 mr-2" />

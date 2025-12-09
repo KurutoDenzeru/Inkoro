@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -25,6 +26,7 @@ export function PDFDock({
     onViewModeChange?.(mode);
   };
   const MIN_SCALE = 0.4;
+  const isMobile = useIsMobile();
   return (
     <TooltipProvider>
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 mx-auto bg-background/95 backdrop-blur border rounded-lg shadow-lg z-50 flex flex-row items-center justify-center gap-2 p-2 md:p-3 overflow-x-auto">
@@ -113,7 +115,8 @@ export function PDFDock({
         <div className="hidden sm:block w-px h-6 bg-border" />
 
         {/* View Mode Group */}
-        <div className="flex items-center gap-1 md:gap-2 shrink-0">
+        {!isMobile && (
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -143,7 +146,8 @@ export function PDFDock({
             </TooltipTrigger>
             <TooltipContent>Multiple pages grid view</TooltipContent>
           </Tooltip>
-        </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
