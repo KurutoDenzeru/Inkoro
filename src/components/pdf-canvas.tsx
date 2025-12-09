@@ -8,6 +8,7 @@ import { PDFDock } from './pdf-dock';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFCanvasProps {
+    onViewModeChange?: (mode: 'single' | 'multiple') => void;
   file: File | null;
   currentPage: number;
   numPages: number;
@@ -35,6 +36,8 @@ interface PDFCanvasProps {
   textUnderline?: boolean;
   backgroundColor?: string;
   textAlign?: 'left' | 'center' | 'right';
+  sidebarOpen?: boolean;
+  viewMode?: 'single' | 'multiple';
 }
 
 export function PDFCanvas({
@@ -65,6 +68,9 @@ export function PDFCanvas({
   textUnderline,
   backgroundColor,
   textAlign,
+  sidebarOpen = true,
+  viewMode = 'single',
+  onViewModeChange,
 }: PDFCanvasProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefsMap = useRef<Record<number, HTMLDivElement | null>>({});
@@ -100,7 +106,6 @@ export function PDFCanvas({
   const [canvasScrollStart, setCanvasScrollStart] = useState<{ x: number; y: number } | null>(null);
 
   // View mode state
-  const [viewMode, setViewMode] = useState<'single' | 'multiple'>('single');
 
   // Mobile detection
   const isMobile = useIsMobile();
@@ -1258,7 +1263,13 @@ export function PDFCanvas({
         onMouseLeave={handleCanvasDragEnd}
       >
         <div className="flex flex-col items-center w-full">
-          <div className={viewMode === 'multiple' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 w-full' : 'space-y-8'}>
+          <div
+            className={viewMode === 'multiple' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4' : 'space-y-8'}
+            style={viewMode === 'multiple' ? {
+              width: sidebarOpen ? 'calc(100vw - 15rem)' : '100vw',
+              transition: 'width 0.2s',
+            } : {}}
+          >
             {Array.from({ length: pagesToRender }, (_, i) => i + 1).map((pageNum) => (
               <div
                 key={pageNum}
@@ -1269,8 +1280,8 @@ export function PDFCanvas({
                 className={`relative rounded-md bg-white transition-all duration-300 ease-out ${pageNum === currentPage ? 'border-2 border-gray-400 shadow-lg' : 'border border-gray-200'} ${viewMode === 'single' ? 'mx-auto' : ''
                   }`}
                 style={{
-                  width: viewMode === 'multiple' ? '100%' : 'fit-content',
-                  maxWidth: viewMode === 'single' ? '90vw' : 'none',
+                  width: viewMode === 'multiple' ? 'auto' : 'fit-content',
+                  maxWidth: viewMode === 'single' ? '90vw' : undefined,
                   cursor: currentTool === 'select' ? 'default' : 'crosshair',
                 }}
                 onMouseDown={(e) => {
@@ -1327,7 +1338,7 @@ export function PDFCanvas({
                 <div
                   className="overflow-auto"
                   style={{
-                    maxWidth: '100%',
+                    maxWidth: viewMode === 'single' ? '100%' : undefined,
                     maxHeight: '100%',
                     display: 'flex',
                     alignItems: isMobile ? 'flex-start' : 'center',
@@ -1394,7 +1405,7 @@ export function PDFCanvas({
         onPageChange={onPageChange}
         onScaleChange={onScaleChange}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={onViewModeChange}
       />
     </div>
   );

@@ -1447,6 +1447,9 @@ export function PDFEditor() {
             textUnderline={textUnderline}
             backgroundColor={backgroundColor}
             textAlign={textAlign}
+            sidebarOpen={sidebarOpen}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
         </div>
       </div>
