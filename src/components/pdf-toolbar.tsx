@@ -2,14 +2,14 @@ import { useState } from 'react';
 import type { Tool, Annotation } from '@/types/pdf';
 import { ImageUploadDialog } from './image-upload-dialog';
 import SignatureDialog from './signature-dialog';
-import { MousePointer2, Type, Square, Circle, Minus, MoveRight, Highlighter, FileSignature, RotateCw, Trash2, Palette, SquareDashed, MoreHorizontal, PanelRight, AlignLeft, AlignCenter, AlignRight, Image } from 'lucide-react';
+import { MousePointer2, Type, Square, Circle, Minus, MoveRight, Highlighter, FileSignature, Palette, SquareDashed, MoreHorizontal, PanelRight, AlignLeft, AlignCenter, AlignRight, Image } from 'lucide-react';
 
 // Components
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 interface PDFToolbarProps {
   currentTool: Tool;
@@ -71,9 +71,6 @@ const shapeTools: { tool: Tool; icon: React.ReactNode; label: string }[] = [
 export function PDFToolbar({
   currentTool,
   onToolChange,
-  onRotate,
-  onDeleteSelected,
-  hasSelection,
   currentColor,
   onColorChange,
   strokeWidth,
