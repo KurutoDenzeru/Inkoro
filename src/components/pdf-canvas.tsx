@@ -855,22 +855,18 @@ export function PDFCanvas({
     const bounds = getAnnotationBounds(annotation);
     const padding = 8;
 
-    // Make handles responsive - bigger on mobile but not too large
-    const handleSize = isMobile ? 28 : 12;
-    const handleOffset = isMobile ? handleSize / 2 + 2 : 6;
-
     const cornerHandles = [
-      { handle: 'tl', top: -handleOffset, left: -handleOffset, cursor: 'nw-resize' },
-      { handle: 'tr', top: -handleOffset, right: -handleOffset, cursor: 'ne-resize' },
-      { handle: 'bl', bottom: -handleOffset, left: -handleOffset, cursor: 'sw-resize' },
-      { handle: 'br', bottom: -handleOffset, right: -handleOffset, cursor: 'se-resize' },
+      { handle: 'tl', top: 0, left: 0, cursor: 'nw-resize' },
+      { handle: 'tr', top: 0, right: 0, cursor: 'ne-resize' },
+      { handle: 'bl', bottom: 0, left: 0, cursor: 'sw-resize' },
+      { handle: 'br', bottom: 0, right: 0, cursor: 'se-resize' },
     ];
 
     const edgeHandles = [
-      { handle: 'top', top: -handleOffset, left: bounds.width / 2, cursor: 'n-resize' },
-      { handle: 'bottom', bottom: -handleOffset, left: bounds.width / 2, cursor: 's-resize' },
-      { handle: 'left', top: bounds.height / 2, left: -handleOffset, cursor: 'w-resize' },
-      { handle: 'right', top: bounds.height / 2, right: -handleOffset, cursor: 'e-resize' },
+      { handle: 'top', top: 0, left: bounds.width / 2, cursor: 'n-resize' },
+      { handle: 'bottom', bottom: 0, left: bounds.width / 2, cursor: 's-resize' },
+      { handle: 'left', top: bounds.height / 2, left: 0, cursor: 'w-resize' },
+      { handle: 'right', top: bounds.height / 2, right: 0, cursor: 'e-resize' },
     ];
 
     return (
@@ -897,11 +893,10 @@ export function PDFCanvas({
             key={handle.handle}
             className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
             style={{
-              top: handle.top !== undefined ? handle.top : 'auto',
-              left: handle.left !== undefined ? handle.left : 'auto',
-              right: handle.right !== undefined ? handle.right : 'auto',
-              bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
-              transform: 'translate(-50%, -50%)',
+              top: handle.top === 0 ? '-50%' : 'auto',
+              left: handle.left === 0 ? '-50%' : 'auto',
+              right: handle.right === 0 ? '-50%' : 'auto',
+              bottom: handle.bottom === 0 ? '-50%' : 'auto',
               cursor: handle.cursor,
               touchAction: 'none' as any,
               WebkitTapHighlightColor: 'transparent' as any,
@@ -921,11 +916,11 @@ export function PDFCanvas({
             key={handle.handle}
             className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
             style={{
-              top: handle.top !== undefined ? handle.top : 'auto',
-              left: handle.left !== undefined ? handle.left : 'auto',
-              right: handle.right !== undefined ? handle.right : 'auto',
-              bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
-              transform: 'translate(-50%, -50%)',
+              top: handle.top === 0 ? '-50%' : (typeof handle.top === 'number' ? handle.top : 'auto'),
+              left: handle.left === 0 ? '-50%' : (typeof handle.left === 'number' ? handle.left : 'auto'),
+              right: handle.right === 0 ? '-50%' : (typeof handle.right === 'number' ? handle.right : 'auto'),
+              bottom: handle.bottom === 0 ? '-50%' : (typeof handle.bottom === 'number' ? handle.bottom : 'auto'),
+              transform: handle.handle === 'left' || handle.handle === 'right' ? 'translateX(-50%)' : 'translateY(-50%)',
               cursor: handle.cursor,
               touchAction: 'none' as any,
               WebkitTapHighlightColor: 'transparent' as any,
