@@ -155,7 +155,7 @@ export function ExportDialog({ open, onOpenChange, onExport, defaultFormat = 'pd
             <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
-            <Button variant="outline" onClick={handleExport} className="flex-1">
+            <Button onClick={handleExport} className="flex-1 bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 transition-colors dark:bg-red-600 dark:border-red-600 dark:hover:bg-red-700">
               <Download className="w-4 h-4 mr-2" /> Export
             </Button>
           </div>

@@ -1,4 +1,4 @@
-import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info, Sun, Moon, Check } from 'lucide-react';
+import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info, Sun, Moon, Monitor, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -59,9 +59,10 @@ export function PDFNavbar({
   const [howToOpen, setHowToOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
     if (typeof window === 'undefined') return 'light';
     const saved = localStorage.getItem('inkoro-theme');
+    if (saved === 'system') return 'system';
     if (saved === 'dark') return 'dark';
     if (saved === 'light') return 'light';
     // default to system preference
@@ -71,12 +72,27 @@ export function PDFNavbar({
   // Apply theme class on mount and whenever it changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const mm = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = (value: 'light' | 'dark') => {
+      if (value === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    };
+
+    // If user chose system, follow system preference and listen for changes
+    if (theme === 'system') {
+      const systemPref = mm && mm.matches ? 'dark' : 'light';
+      apply(systemPref);
+      const listener = (e: MediaQueryListEvent) => apply(e.matches ? 'dark' : 'light');
+      mm && mm.addEventListener && mm.addEventListener('change', listener);
+      // persist 'system'
+      localStorage.setItem('inkoro-theme', 'system');
+      return () => mm && mm.removeEventListener && mm.removeEventListener('change', listener);
     }
+
+    // Otherwise force the selected theme
+    apply(theme === 'dark' ? 'dark' : 'light');
     localStorage.setItem('inkoro-theme', theme);
+    return undefined;
   }, [theme]);
   // Remove one or more trailing extensions from the display name (e.g. `.pdf`, `.pdf.pdf`, `.tar.gz`)
   const cleanFileName = fileName ? fileName.replace(/(\.[^.]+)+$/g, '') : fileName;
@@ -282,7 +298,7 @@ export function PDFNavbar({
                       variant="outline"
                       size="sm"
                       onClick={() => setExportOpen(true)}
-                      className="h-8 px-3 text-sm bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 transition-colors"
+                      className="h-8 px-3 text-sm bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 transition-colors dark:bg-red-600 dark:border-red-600 dark:hover:bg-red-700"
                     >
                     <Download className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Export</span>
@@ -293,11 +309,14 @@ export function PDFNavbar({
 
               {/* Theme dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 px-3 text-sm">
-                    <span className="hidden sm:inline">Theme</span>
-                  </Button>
-                </DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant={theme === 'system' ? 'outline' : 'outline'} size="sm" className="h-8 px-3 text-sm flex items-center gap-2">
+                      {theme === 'light' && <Sun className="w-4 h-4" />}
+                      {theme === 'dark' && <Moon className="w-4 h-4" />}
+                      {theme === 'system' && <Monitor className="w-4 h-4" />}
+                      <span className="hidden sm:inline">{theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-40">
                   <div className="px-2 py-1.5">
                     <p className="text-xs font-semibold text-muted-foreground mb-2">Theme</p>
@@ -323,6 +342,18 @@ export function PDFNavbar({
                           <span>Dark</span>
                         </div>
                         {theme === 'dark' && <Check className="w-4 h-4 text-green-600" />}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setTheme('system');
+                        // remove any forced dark/light and let effect determine
+                        localStorage.setItem('inkoro-theme', 'system');
+                        // The effect will apply the system preference
+                      }} className="justify-between">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="w-4 h-4 mr-2" />
+                          <span>System</span>
+                        </div>
+                        {theme === 'system' && <Check className="w-4 h-4 text-green-600" />}
                       </DropdownMenuItem>
                     </div>
                   </div>
