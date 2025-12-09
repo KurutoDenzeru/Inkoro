@@ -224,7 +224,7 @@ export function PDFNavbar({
                       </div>
                       </div>
                     )}
-                    <DropdownMenuSeparator />
+                    {!isMobile && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={onRotate}>
                       <RotateCw className="w-4 h-4 mr-2" />
                       <span>Rotate Page</span>
