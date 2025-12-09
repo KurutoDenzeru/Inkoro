@@ -867,10 +867,10 @@ export function PDFCanvas({
     ];
 
     const edgeHandles = [
-      { handle: 'top', top: -handleOffset, left: '50%', cursor: 'n-resize' },
-      { handle: 'bottom', bottom: -handleOffset, left: '50%', cursor: 's-resize' },
-      { handle: 'left', top: '50%', left: -handleOffset, cursor: 'w-resize' },
-      { handle: 'right', top: '50%', right: -handleOffset, cursor: 'e-resize' },
+      { handle: 'top', top: -handleOffset, left: bounds.width / 2, cursor: 'n-resize' },
+      { handle: 'bottom', bottom: -handleOffset, left: bounds.width / 2, cursor: 's-resize' },
+      { handle: 'left', top: bounds.height / 2, left: -handleOffset, cursor: 'w-resize' },
+      { handle: 'right', top: bounds.height / 2, right: -handleOffset, cursor: 'e-resize' },
     ];
 
     return (
@@ -941,10 +941,10 @@ export function PDFCanvas({
 
         {/* Rotation handle - circular handle at top center */}
         <div
-          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-black rounded-full pointer-events-auto absolute transition-colors hover:bg-red-500`}
+          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-black rounded-full pointer-events-auto absolute transition-colors`}
           style={{
             top: isMobile ? -32 : -28,
-            left: '50%',
+            left: bounds.width / 2,
             transform: 'translate(-50%, -50%)',
             cursor: 'grab',
             touchAction: 'none' as any,
