@@ -853,20 +853,22 @@ export function PDFCanvas({
     }
 
     const bounds = getAnnotationBounds(annotation);
-    const padding = 8;
+    const handleSize = isMobile ? 16 : 4;
+    const padding = isMobile ? 12 : 6;
 
     const cornerHandles = [
-      { handle: 'tl', top: 0, left: 0, cursor: 'nw-resize' },
-      { handle: 'tr', top: 0, right: 0, cursor: 'ne-resize' },
-      { handle: 'bl', bottom: 0, left: 0, cursor: 'sw-resize' },
-      { handle: 'br', bottom: 0, right: 0, cursor: 'se-resize' },
+      { handle: 'tl', top: -padding - handleSize / 2, left: -padding - handleSize / 2, cursor: 'nw-resize' },
+      { handle: 'tr', top: -padding - handleSize / 2, right: -padding - handleSize / 2, cursor: 'ne-resize' },
+      { handle: 'bl', bottom: -padding - handleSize / 2, left: -padding - handleSize / 2, cursor: 'sw-resize' },
+      { handle: 'br', bottom: -padding - handleSize / 2, right: -padding - handleSize / 2, cursor: 'se-resize' },
     ];
 
-    const edgeHandles = [
-      { handle: 'top', top: 0, left: bounds.width / 2, cursor: 'n-resize' },
-      { handle: 'bottom', bottom: 0, left: bounds.width / 2, cursor: 's-resize' },
-      { handle: 'left', top: bounds.height / 2, left: 0, cursor: 'w-resize' },
-      { handle: 'right', top: bounds.height / 2, right: 0, cursor: 'e-resize' },
+    // Invisible edge zones for cursor feedback (no visible handles, just hover detection)
+    const edgeHitZones = [
+      { handle: 'top', top: -padding - 8, height: 24, left: 0, width: '100%', cursor: 'n-resize' },
+      { handle: 'bottom', bottom: -padding - 8, height: 24, left: 0, width: '100%', cursor: 's-resize' },
+      { handle: 'left', left: -padding - 8, width: 24, top: 0, height: '100%', cursor: 'w-resize' },
+      { handle: 'right', right: -padding - 8, width: 24, top: 0, height: '100%', cursor: 'e-resize' },
     ];
 
     return (
@@ -887,21 +889,20 @@ export function PDFCanvas({
           WebkitTapHighlightColor: 'transparent' as any,
         }}
       >
-        {/* Corner handles */}
+        {/* Corner handles - visible dots */}
         {cornerHandles.map((handle) => (
           <div
             key={handle.handle}
-            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
+            className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} bg-white border-2 border-blue-500 rounded-sm pointer-events-auto absolute transition-colors hover:bg-blue-500`}
             style={{
-              top: handle.top === 0 ? '-50%' : 'auto',
-              left: handle.left === 0 ? '-50%' : 'auto',
-              right: handle.right === 0 ? '-50%' : 'auto',
-              bottom: handle.bottom === 0 ? '-50%' : 'auto',
+              top: handle.top !== undefined ? handle.top : 'auto',
+              left: handle.left !== undefined ? handle.left : 'auto',
+              right: handle.right !== undefined ? handle.right : 'auto',
+              bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
               cursor: handle.cursor,
               touchAction: 'none' as any,
               WebkitTapHighlightColor: 'transparent' as any,
               zIndex: 20,
-              borderColor: 'black',
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
             onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -910,25 +911,24 @@ export function PDFCanvas({
           />
         ))}
 
-        {/* Edge handles */}
-        {edgeHandles.map((handle) => (
+        {/* Edge hit zones - invisible but cursor changes on hover */}
+        {edgeHitZones.map((zone) => (
           <div
-            key={handle.handle}
-            className={`${isMobile ? 'w-7 h-7' : 'w-3 h-3'} bg-white border-2 border-black rounded-sm pointer-events-auto absolute transition-colors hover:bg-red-500`}
+            key={zone.handle}
+            className="pointer-events-auto absolute"
             style={{
-              top: handle.top === 0 ? '-50%' : (typeof handle.top === 'number' ? handle.top : 'auto'),
-              left: handle.left === 0 ? '-50%' : (typeof handle.left === 'number' ? handle.left : 'auto'),
-              right: handle.right === 0 ? '-50%' : (typeof handle.right === 'number' ? handle.right : 'auto'),
-              bottom: handle.bottom === 0 ? '-50%' : (typeof handle.bottom === 'number' ? handle.bottom : 'auto'),
-              transform: handle.handle === 'left' || handle.handle === 'right' ? 'translateX(-50%)' : 'translateY(-50%)',
-              cursor: handle.cursor,
+              top: zone.top !== undefined ? zone.top : (zone.top === 0 ? 0 : 'auto'),
+              left: zone.left !== undefined ? zone.left : (zone.left === 0 ? 0 : 'auto'),
+              right: zone.right !== undefined ? zone.right : 'auto',
+              bottom: zone.bottom !== undefined ? zone.bottom : 'auto',
+              width: typeof zone.width === 'string' ? zone.width : zone.width,
+              height: typeof zone.height === 'string' ? zone.height : zone.height,
+              cursor: zone.cursor,
               touchAction: 'none' as any,
-              WebkitTapHighlightColor: 'transparent' as any,
-              zIndex: 20,
-              borderColor: 'black',
+              zIndex: 10,
             }}
-            onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
-            onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
+            onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, zone.handle)}
+            onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, zone.handle)}
             onTouchMove={(e) => handleResizeMouseMove(e)}
             onTouchEnd={() => handleResizeMouseUp()}
           />
@@ -936,9 +936,9 @@ export function PDFCanvas({
 
         {/* Rotation handle - circular handle at top center */}
         <div
-          className={`${isMobile ? 'w-7 h-7' : 'w-4 h-4'} bg-white border-2 border-black rounded-full pointer-events-auto absolute transition-colors`}
+          className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} bg-white border-2 border-amber-500 rounded-full pointer-events-auto absolute transition-colors hover:bg-amber-500`}
           style={{
-            top: isMobile ? -32 : -28,
+            top: isMobile ? -24 : -20,
             left: bounds.width / 2,
             transform: 'translate(-50%, -50%)',
             cursor: 'grab',
@@ -946,7 +946,6 @@ export function PDFCanvas({
             WebkitTapHighlightColor: 'transparent' as any,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
             zIndex: 20,
-            borderColor: 'black',
           }}
           onMouseDown={(e) => handleRotateMouseDown(e, annotation.id)}
           onTouchStart={(e) => handleRotateMouseDown(e, annotation.id)}
