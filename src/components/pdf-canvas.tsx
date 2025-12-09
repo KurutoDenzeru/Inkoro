@@ -319,6 +319,9 @@ export function PDFCanvas({
     }
 
     e.stopPropagation();
+    if ('preventDefault' in e && e.type !== 'touchstart') {
+      e.preventDefault();
+    }
     onAnnotationSelect(annotation.id);
     hasDraggedRef.current = false;
 
@@ -683,6 +686,21 @@ export function PDFCanvas({
     setCanvasScrollStart(null);
   };
 
+  // Prevent default touch scrolling of the outer container while interacting with annotations
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const isInteracting = isDragging || isResizing || isRotating || isCanvasDragging;
+    if (isInteracting) {
+      container.style.touchAction = 'none';
+    } else {
+      container.style.touchAction = '';
+    }
+    return () => {
+      if (container) container.style.touchAction = '';
+    };
+  }, [isDragging, isResizing, isRotating, isCanvasDragging]);
+
   // Get bounding box for an annotation
   const getAnnotationBounds = (annotation: Annotation) => {
     switch (annotation.type) {
@@ -804,6 +822,8 @@ export function PDFCanvas({
               top: annotation.position.y - handleOffset,
               cursor: 'grab',
               zIndex: 10,
+                touchAction: 'none' as any,
+                WebkitTapHighlightColor: 'transparent' as any,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, 'start')}
           />
@@ -815,6 +835,8 @@ export function PDFCanvas({
               top: annotation.endPoint.y - handleOffset,
               cursor: 'grab',
               zIndex: 10,
+                touchAction: 'none' as any,
+                WebkitTapHighlightColor: 'transparent' as any,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, 'end')}
           />
@@ -855,8 +877,10 @@ export function PDFCanvas({
           backgroundColor: 'rgba(59, 130, 246, 0.05)',
           transform: `rotate(${annotation.rotation || 0}deg)`,
           transformOrigin: 'center',
-          transition: 'transform 0.05s ease-out',
+          willChange: 'transform',
           touchAction: 'none',
+          zIndex: 15,
+          WebkitTapHighlightColor: 'transparent' as any,
         }}
       >
         {/* Corner handles */}
@@ -871,6 +895,9 @@ export function PDFCanvas({
               bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
               transform: 'translate(-50%, -50%)',
               cursor: handle.cursor,
+              touchAction: 'none' as any,
+              WebkitTapHighlightColor: 'transparent' as any,
+              zIndex: 20,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
             onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -891,6 +918,8 @@ export function PDFCanvas({
               bottom: handle.bottom !== undefined ? handle.bottom : 'auto',
               transform: handle.transform ? `${handle.transform} translate(-50%, -50%)` : 'translate(-50%, -50%)',
               cursor: handle.cursor,
+              touchAction: 'none' as any,
+              WebkitTapHighlightColor: 'transparent' as any,
             }}
             onMouseDown={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
             onTouchStart={(e) => handleResizeMouseDown(e, annotation.id, handle.handle)}
@@ -907,7 +936,10 @@ export function PDFCanvas({
             left: '50%',
             transform: 'translate(-50%, -50%)',
             cursor: 'grab',
+            touchAction: 'none' as any,
+            WebkitTapHighlightColor: 'transparent' as any,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+            zIndex: 20,
           }}
           onMouseDown={(e) => handleRotateMouseDown(e, annotation.id)}
           onTouchStart={(e) => handleRotateMouseDown(e, annotation.id)}
@@ -920,6 +952,7 @@ export function PDFCanvas({
 
   const renderAnnotation = (annotation: Annotation) => {
     const isSelected = annotation.id === selectedAnnotationId;
+    const userSelectValue = editingAnnotationId === annotation.id ? 'text' as const : 'none' as const;
     const commonProps = {
       onMouseDown: (e: React.MouseEvent) => handleAnnotationMouseDown(e, annotation),
       onTouchStart: (e: React.TouchEvent) => handleAnnotationMouseDown(e, annotation),
@@ -933,7 +966,12 @@ export function PDFCanvas({
         cursor: currentTool === 'select' ? 'pointer' : 'default',
         transform: annotation.rotation ? `rotate(${annotation.rotation}deg)` : undefined,
         transformOrigin: 'center',
-        transition: 'transform 0.05s ease-out',
+        transition: (isDragging || isResizing || isRotating) ? 'none' : 'transform 0.05s ease-out',
+        userSelect: userSelectValue,
+        WebkitUserSelect: userSelectValue,
+        MozUserSelect: userSelectValue,
+        WebkitTouchCallout: 'none' as any,
+        WebkitUserDrag: 'none' as any,
       },
       className: `absolute ${isSelected && currentTool !== 'select' ? 'ring-2 ring-primary' : ''} ${currentTool === 'select' ? 'cursor-pointer' : ''}`,
     };
@@ -1240,8 +1278,6 @@ export function PDFCanvas({
       </div>
     );
   }
-
-  // PDFCanvas: rendering
 
   // Render at least one page initially even if numPages is 0
   const pagesToRender = numPages > 0 ? numPages : 1;
