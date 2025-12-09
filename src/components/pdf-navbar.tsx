@@ -1,5 +1,5 @@
-import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info } from 'lucide-react';
-import { useState } from 'react';
+import { Download, Undo, Redo, Trash2, RotateCw, RotateCcw, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, Grid3x3, HelpCircle, Info, Sun, Moon, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Components
@@ -59,6 +59,25 @@ export function PDFNavbar({
   const [howToOpen, setHowToOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = localStorage.getItem('inkoro-theme');
+    if (saved === 'dark') return 'dark';
+    if (saved === 'light') return 'light';
+    // default to system preference
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  // Apply theme class on mount and whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('inkoro-theme', theme);
+  }, [theme]);
   // Remove one or more trailing extensions from the display name (e.g. `.pdf`, `.pdf.pdf`, `.tar.gz`)
   const cleanFileName = fileName ? fileName.replace(/(\.[^.]+)+$/g, '') : fileName;
 
@@ -263,7 +282,7 @@ export function PDFNavbar({
                       variant="outline"
                       size="sm"
                       onClick={() => setExportOpen(true)}
-                      className="h-8 px-3 text-sm"
+                      className="h-8 px-3 text-sm bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 transition-colors"
                     >
                     <Download className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Export</span>
@@ -271,6 +290,44 @@ export function PDFNavbar({
                 </TooltipTrigger>
                 <TooltipContent>Export</TooltipContent>
               </Tooltip>
+
+              {/* Theme dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 px-3 text-sm">
+                    <span className="hidden sm:inline">Theme</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Theme</p>
+                    <div className="flex flex-col gap-1">
+                      <DropdownMenuItem onClick={() => {
+                        setTheme('light');
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('inkoro-theme', 'light');
+                      }} className="justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sun className="w-4 h-4 mr-2" />
+                          <span>Light</span>
+                        </div>
+                        {theme === 'light' && <Check className="w-4 h-4 text-green-600" />}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setTheme('dark');
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('inkoro-theme', 'dark');
+                      }} className="justify-between">
+                        <div className="flex items-center gap-2">
+                          <Moon className="w-4 h-4 mr-2" />
+                          <span>Dark</span>
+                        </div>
+                        {theme === 'dark' && <Check className="w-4 h-4 text-green-600" />}
+                      </DropdownMenuItem>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* More Menu removed — replaced by Export quick action */}
