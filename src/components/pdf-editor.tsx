@@ -145,51 +145,66 @@ export function PDFEditor() {
     }
   }, [currentColor, strokeColor, strokeWidth, selectedAnnotationId]);
 
-  // Save session to localStorage whenever state changes
+  // Save session to localStorage only when file or annotations change (debounced)
   useEffect(() => {
     if (!pdfState.file || pdfState.numPages === 0) return;
 
-    const file = pdfState.file; // Capture in variable to ensure it's not null
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-      if (base64) {
-        const session = {
-          fileName: file.name,
-          fileData: base64,
-          numPages: pdfState.numPages,
-          currentPage: pdfState.currentPage,
-          scale: pdfState.scale,
-          rotation: pdfState.rotation,
-          annotations: pdfState.annotations,
-          // Save color and formatting preferences
-          currentColor,
-          strokeColor,
-          strokeWidth,
-          fontFamily,
-          fontSize,
-          textBold,
-          textItalic,
-          textUnderline,
-          backgroundColor,
-          textAlign,
-          timestamp: new Date().toISOString(),
-        };
-        localStorage.setItem('pdfEditorSession', JSON.stringify(session));
-        // saved session to localStorage
-      }
-    };
-    reader.onerror = () => {
-      console.error('Error reading file for localStorage');
-    };
-    reader.readAsDataURL(file);
+    // Use a debounce timer to avoid excessive saves and FileReader creation
+    const saveTimer = setTimeout(() => {
+      const file = pdfState.file;
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = (e.target?.result as string)?.split(',')[1];
+        if (base64) {
+          const session = {
+            fileName: file.name,
+            fileData: base64,
+            numPages: pdfState.numPages,
+            currentPage: pdfState.currentPage,
+            scale: pdfState.scale,
+            rotation: pdfState.rotation,
+            annotations: pdfState.annotations,
+            // Save color and formatting preferences
+            currentColor,
+            strokeColor,
+            strokeWidth,
+            fontFamily,
+            fontSize,
+            textBold,
+            textItalic,
+            textUnderline,
+            backgroundColor,
+            textAlign,
+            timestamp: new Date().toISOString(),
+          };
+          localStorage.setItem('pdfEditorSession', JSON.stringify(session));
+        }
+      };
+      reader.onerror = () => {
+        console.error('Error reading file for localStorage');
+      };
+      reader.readAsDataURL(file);
+    }, 1000); // Debounce for 1 second
+
+    return () => clearTimeout(saveTimer);
   }, [pdfState, currentColor, strokeColor, strokeWidth, fontFamily, fontSize, textBold, textItalic, textUnderline, backgroundColor, textAlign]);
 
   const addToHistory = useCallback((annotations: Annotation[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push([...annotations]);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+    
+    // Limit history to 50 items to prevent memory bloat
+    const MAX_HISTORY = 50;
+    if (newHistory.length > MAX_HISTORY) {
+      newHistory.shift(); // Remove oldest entry
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    } else {
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    }
   }, [history, historyIndex]);
 
   const getNextName = (type: string, annotations: Annotation[]) => {

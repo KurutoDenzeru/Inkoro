@@ -131,9 +131,11 @@ export function PDFCanvas({
       // Instant scroll for better responsiveness when clicking
       pageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
       // Reset flag after scroll completes
-      setTimeout(() => {
+      const scrollTimer = setTimeout(() => {
         isScrollingProgrammaticallyRef.current = false;
       }, 200);
+      
+      return () => clearTimeout(scrollTimer);
     }
   }, [currentPage]);
 
