@@ -69,8 +69,8 @@ export function PDFDock({
           </Tooltip>
         </div>
 
-        {/* Separator - Hidden on mobile, shown on small devices as vertical line */}
-        <div className="hidden sm:block w-px h-6 bg-border" />
+        {/* Separator - Hidden on mobile, shown on small devices as vertical line (only show on non-mobile view) */}
+        {!isMobile && <div className="hidden sm:block w-px h-6 bg-border" />}
 
         {/* Zoom Controls Group */}
         <div className="flex items-center gap-1 md:gap-2 shrink-0">
