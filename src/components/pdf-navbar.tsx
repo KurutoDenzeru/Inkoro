@@ -5,7 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Components
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import HowToDialog from './howto-dialog';
 import AboutDialog from './about-dialog';
 import { ExportDialog } from './export-dialog';
@@ -259,11 +259,15 @@ export function PDFNavbar({
                       </div>
                       </div>
                     )}
-                    {/* Theme (for mobile and desktop within View menu) */}
-                    <DropdownMenuSeparator />
-                    <div className="px-2 py-1.5">
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Theme</p>
-                      <div className="flex flex-col gap-1">
+                    {/* Theme sub-menu tucked under View (works on mobile) */}
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="px-2 py-1.5">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="w-4 h-4 mr-2" />
+                          <span className="text-sm">Theme</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
                         <DropdownMenuItem onClick={() => {
                           setTheme('light');
                           document.documentElement.classList.remove('dark');
@@ -288,7 +292,6 @@ export function PDFNavbar({
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => {
                           setTheme('system');
-                          // allow the effect to apply system preference
                           localStorage.setItem('inkoro-theme', 'system');
                         }} className="justify-between">
                           <div className="flex items-center gap-2">
@@ -297,8 +300,8 @@ export function PDFNavbar({
                           </div>
                           {theme === 'system' && <Check className="w-4 h-4 text-green-600" />}
                         </DropdownMenuItem>
-                      </div>
-                    </div>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                     {!isMobile && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={onRotate}>
                       <RotateCw className="w-4 h-4 mr-2" />
