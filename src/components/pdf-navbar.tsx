@@ -260,6 +260,7 @@ export function PDFNavbar({
                       </div>
                     )}
                     {/* Theme sub-menu tucked under View (works on mobile) */}
+                    <DropdownMenuSeparator />
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="px-2 py-1.5">
                         <div className="flex items-center gap-2">
