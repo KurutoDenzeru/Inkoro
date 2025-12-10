@@ -259,6 +259,46 @@ export function PDFNavbar({
                       </div>
                       </div>
                     )}
+                    {/* Theme (for mobile and desktop within View menu) */}
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Theme</p>
+                      <div className="flex flex-col gap-1">
+                        <DropdownMenuItem onClick={() => {
+                          setTheme('light');
+                          document.documentElement.classList.remove('dark');
+                          localStorage.setItem('inkoro-theme', 'light');
+                        }} className="justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sun className="w-4 h-4 mr-2" />
+                            <span>Light</span>
+                          </div>
+                          {theme === 'light' && <Check className="w-4 h-4 text-green-600" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setTheme('dark');
+                          document.documentElement.classList.add('dark');
+                          localStorage.setItem('inkoro-theme', 'dark');
+                        }} className="justify-between">
+                          <div className="flex items-center gap-2">
+                            <Moon className="w-4 h-4 mr-2" />
+                            <span>Dark</span>
+                          </div>
+                          {theme === 'dark' && <Check className="w-4 h-4 text-green-600" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setTheme('system');
+                          // allow the effect to apply system preference
+                          localStorage.setItem('inkoro-theme', 'system');
+                        }} className="justify-between">
+                          <div className="flex items-center gap-2">
+                            <Monitor className="w-4 h-4 mr-2" />
+                            <span>System</span>
+                          </div>
+                          {theme === 'system' && <Check className="w-4 h-4 text-green-600" />}
+                        </DropdownMenuItem>
+                      </div>
+                    </div>
                     {!isMobile && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={onRotate}>
                       <RotateCw className="w-4 h-4 mr-2" />
