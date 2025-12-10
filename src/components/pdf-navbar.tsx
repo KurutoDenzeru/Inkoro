@@ -104,7 +104,7 @@ export function PDFNavbar({
           {/* Left Section - Brand Logo and Filename + Menubar */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Brand Logo */}
-            <img src="/brand.png" alt="Inkoro" className="h-12 w-12 shrink-0" />
+            <img src="/brand.webp" alt="Inkoro" className="h-12 w-12 shrink-0" />
 
             {/* Filename and Menubar Column */}
             <div className="flex flex-col items-start justify-start gap-0 flex-1 min-w-0">
@@ -310,11 +310,16 @@ export function PDFNavbar({
               {/* Theme dropdown */}
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant={theme === 'system' ? 'outline' : 'outline'} size="sm" className="h-8 px-3 text-sm flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0 flex items-center justify-center"
+                      aria-label={`Theme: ${theme}`}
+                    >
                       {theme === 'light' && <Sun className="w-4 h-4" />}
                       {theme === 'dark' && <Moon className="w-4 h-4" />}
                       {theme === 'system' && <Monitor className="w-4 h-4" />}
-                      <span className="hidden sm:inline">{theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'}</span>
+                      <span className="sr-only">Theme: {theme}</span>
                     </Button>
                   </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-40">
