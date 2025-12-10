@@ -5,7 +5,8 @@ import type { Tool, Annotation, Point } from '@/types/pdf';
 import { PDFDock } from './pdf-dock';
 
 // Set worker for pdfjs
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Use jsDelivr CDN for pdfjs-dist worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFCanvasProps {
     onViewModeChange?: (mode: 'single' | 'multiple') => void;
