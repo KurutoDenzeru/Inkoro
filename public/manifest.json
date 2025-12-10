@@ -1,0 +1,20 @@
+{
+  "name": "Inkoro",
+  "short_name": "Inkoro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/brand.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "/brand.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}
