@@ -151,19 +151,19 @@ export function Toolbar() {
               <Shapes className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setActiveTool('rect')}>
+              <DropdownMenuItem nativeButton onClick={() => setActiveTool('rect')}>
                 <Square className="h-4 w-4 mr-2" />
                 Rectangle
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTool('circle')}>
+              <DropdownMenuItem nativeButton onClick={() => setActiveTool('circle')}>
                 <Circle className="h-4 w-4 mr-2" />
                 Circle
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTool('line')}>
+              <DropdownMenuItem nativeButton onClick={() => setActiveTool('line')}>
                 <Minus className="h-4 w-4 mr-2" />
                 Line
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTool('arrow')}>
+              <DropdownMenuItem nativeButton onClick={() => setActiveTool('arrow')}>
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Arrow
               </DropdownMenuItem>
@@ -320,7 +320,7 @@ export function Toolbar() {
             <div className="h-px bg-border" />
 
             {/* Download */}
-            <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
+            <DropdownMenuItem nativeButton onClick={() => setDownloadDialogOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Download
             </DropdownMenuItem>

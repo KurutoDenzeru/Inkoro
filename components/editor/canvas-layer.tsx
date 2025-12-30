@@ -134,34 +134,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   };
   
   const handleTextChange = (e: React.FormEvent<HTMLDivElement>, id: string) => {
-      // Save cursor position
-      const selection = window.getSelection();
-      const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-      const cursorOffset = range ? range.startOffset : 0;
-      const cursorNode = range ? range.startContainer : null;
-      
-      updateLayer(pageIndex, id, { content: e.currentTarget.innerText });
-      
-      // Restore cursor position after React re-render
-      setTimeout(() => {
-        if (cursorNode && selection && range) {
-          try {
-            range.setStart(cursorNode, Math.min(cursorOffset, cursorNode.textContent?.length || 0));
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          } catch (err) {
-            // Fallback: place cursor at end
-            const textNode = e.currentTarget.firstChild;
-            if (textNode) {
-              range.setStart(textNode, textNode.textContent?.length || 0);
-              range.collapse(true);
-              selection.removeAllRanges();
-              selection.addRange(range);
-            }
-          }
-        }
-      }, 0);
+      const newContent = e.currentTarget.innerText;
+      updateLayer(pageIndex, id, { content: newContent });
   };
   
   const handleBlur = () => {
@@ -308,9 +282,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       {selectedElement && targetRef.current && !isEditing && (
           <Moveable
             target={targetRef.current}
-            resizable={selectedElement.type !== 'line' && selectedElement.type !== 'arrow'}
+            resizable={true}
             draggable={true}
             rotatable={selectedElement.type !== 'line' && selectedElement.type !== 'arrow'}
+            edge={selectedElement.type === 'line' || selectedElement.type === 'arrow' ? ['e', 'w'] : false}
             
             // Drag
             onDrag={({ target, left, top }) => {

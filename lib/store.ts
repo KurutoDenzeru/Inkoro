@@ -108,7 +108,16 @@ export const useEditorStore = create<EditorState>((set) => ({
   updateLayer: (page, id, updates) => set((state) => ({
     layers: {
       ...state.layers,
-      [page]: (state.layers[page] || []).map(l => l.id === id ? { ...l, ...updates } : l)
+      [page]: (state.layers[page] || []).map(l => 
+        l.id === id 
+          ? { 
+              ...l, 
+              ...updates,
+              // Deep merge style object if it exists in updates
+              style: updates.style ? { ...l.style, ...updates.style } : l.style
+            } 
+          : l
+      )
     }
   })),
 
