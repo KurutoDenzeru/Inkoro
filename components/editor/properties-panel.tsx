@@ -323,18 +323,51 @@ export function PropertiesPanel() {
 
                     <div className="space-y-1.5">
                         <Label className="text-xs text-muted-foreground">Stroke Width</Label>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 1 ? 'default' : 'outline'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleStyleChange('borderWidth', 1)}
+                            >
+                                Thin
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 3 ? 'default' : 'outline'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleStyleChange('borderWidth', 3)}
+                            >
+                                Medium
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 6 ? 'default' : 'outline'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleStyleChange('borderWidth', 6)}
+                            >
+                                Thick
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Corner Radius</Label>
                         <div className="flex items-center gap-2">
                             <Slider
-                                value={[element.style.borderWidth ?? 0]}
-                                max={20}
+                                value={[element.style.borderRadius ?? Math.floor(Math.min(element.width ?? 0, element.height ?? 0) / 2)]}
+                                max={Math.floor(Math.min(element.width ?? 0, element.height ?? 0) / 2) || 100}
                                 step={1}
                                 onValueChange={(vals) => {
                                     const value = Array.isArray(vals) ? vals[0] : vals;
-                                    handleStyleChange('borderWidth', value);
+                                    handleStyleChange('borderRadius', value);
                                 }}
                                 className="flex-1"
                             />
-                            <span className="w-8 text-xs text-right text-muted-foreground">{element.style.borderWidth ?? 0}px</span>
+                            <span className="w-8 text-xs text-right text-muted-foreground">{element.style.borderRadius ?? Math.floor(Math.min(element.width ?? 0, element.height ?? 0) / 2)}px</span>
                         </div>
                     </div>
 
@@ -418,20 +451,36 @@ export function PropertiesPanel() {
 
                     <div className="space-y-1.5">
                         <Label className="text-xs text-muted-foreground">Stroke Width</Label>
-                        <div className="flex items-center gap-2">
-                            <Slider
-                                value={[element.style.borderWidth ?? 2]}
-                                max={20}
-                                step={1}
-                                onValueChange={(vals) => {
-                                    const value = Array.isArray(vals) ? vals[0] : vals;
-                                    handleStyleChange('borderWidth', value);
-                                }}
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 1 ? 'default' : 'outline'}
+                                size="sm"
                                 className="flex-1"
-                            />
-                            <span className="w-8 text-xs text-right text-muted-foreground">{element.style.borderWidth ?? 2}px</span>
+                                onClick={() => handleStyleChange('borderWidth', 1)}
+                            >
+                                Thin
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 3 ? 'default' : 'outline'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleStyleChange('borderWidth', 3)}
+                            >
+                                Medium
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={element.style.borderWidth === 6 ? 'default' : 'outline'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleStyleChange('borderWidth', 6)}
+                            >
+                                Thick
+                            </Button>
                         </div>
-                    </div>
+                    </div> 
 
                     <div className="space-y-1.5">
                         <Label className="text-xs text-muted-foreground">Stroke Style</Label>

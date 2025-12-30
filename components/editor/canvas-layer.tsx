@@ -70,14 +70,28 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             style: { backgroundColor: '#ff0000', opacity: 1, borderRadius: 50 }
           };
       } else if (activeTool === 'line') {
+          const start = { x, y: y + 1 };
+          const end = { x: x + 150, y: y + 1 };
+          const newX = Math.min(start.x, end.x);
+          const newY = Math.min(start.y, end.y);
+          const newWidth = Math.max(Math.abs(end.x - start.x), 2);
+          const newHeight = Math.max(Math.abs(end.y - start.y), 2);
+
           newElement = {
-            id, type: 'line', x, y, width: 150, height: 2, rotation: 0,
-            style: { backgroundColor: '#000000', opacity: 1 }
+            id, type: 'line', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
+            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 2, start, end, sloppiness: 0 }
           };
       } else if (activeTool === 'arrow') {
+          const start = { x, y: y + 1 };
+          const end = { x: x + 150, y: y + 1 };
+          const newX = Math.min(start.x, end.x);
+          const newY = Math.min(start.y, end.y);
+          const newWidth = Math.max(Math.abs(end.x - start.x), 2);
+          const newHeight = Math.max(Math.abs(end.y - start.y), 2);
+
           newElement = {
-            id, type: 'arrow', x, y, width: 150, height: 2, rotation: 0,
-            style: { backgroundColor: '#000000', opacity: 1, arrowEnd: true }
+            id, type: 'arrow', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
+            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 2, arrowEnd: true, start, end, sloppiness: 0 }
           };
       } 
       // ... other tools
@@ -101,6 +115,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   // Text editing state
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
+  const moveStartRef = useRef<{ x: number; y: number; start: {x:number;y:number}; end: {x:number;y:number} } | null>(null);
   
   useEffect(() => {
     // Reset editing state when selection changes
@@ -144,68 +159,80 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   };
 
   // Line/Arrow endpoint dragging
-  const handleEndpointMouseDown = (e: React.MouseEvent, endpoint: 'start' | 'end') => {
-      e.stopPropagation();
+  const handleEndpointMouseDown = (e: any, endpoint: 'start' | 'end') => {
+      // Prevent default to avoid touch scrolling while dragging and support pointer events
+      e.preventDefault?.();
+      e.stopPropagation?.();
       setDraggingEndpoint(endpoint);
   };
 
   useEffect(() => {
       if (!draggingEndpoint || !selectedElement || (selectedElement.type !== 'line' && selectedElement.type !== 'arrow')) return;
 
-      const handleMouseMove = (e: MouseEvent) => {
+      const getCoords = (ev: MouseEvent | TouchEvent) => {
+          if ('touches' in ev) {
+              const t = ev.touches[0];
+              return { clientX: t.clientX, clientY: t.clientY };
+          } else {
+              return { clientX: (ev as MouseEvent).clientX, clientY: (ev as MouseEvent).clientY };
+          }
+      };
+
+      const handlePointerMove = (e: MouseEvent | TouchEvent) => {
           const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
           if (!canvas) return;
 
           const rect = canvas.getBoundingClientRect();
-          const mouseX = (e.clientX - rect.left) / scale;
-          const mouseY = (e.clientY - rect.top) / scale;
+          const { clientX, clientY } = getCoords(e);
+          const mouseX = (clientX - rect.left) / scale;
+          const mouseY = (clientY - rect.top) / scale;
 
-          // Calculate line from start to end point
-          const startX = selectedElement.x;
-          const startY = selectedElement.y + selectedElement.height / 2;
-          const endX = selectedElement.x + selectedElement.width;
-          const endY = selectedElement.y + selectedElement.height / 2;
+          const currStart = selectedElement.style?.start ?? { x: selectedElement.x, y: selectedElement.y + selectedElement.height / 2 };
+          const currEnd = selectedElement.style?.end ?? { x: selectedElement.x + selectedElement.width, y: selectedElement.y + selectedElement.height / 2 };
 
-          let newStartX = startX;
-          let newStartY = startY;
-          let newEndX = endX;
-          let newEndY = endY;
+          let newStart = { ...currStart };
+          let newEnd = { ...currEnd };
 
           if (draggingEndpoint === 'start') {
-              newStartX = mouseX;
-              newStartY = mouseY;
+              newStart = { x: mouseX, y: mouseY };
           } else {
-              newEndX = mouseX;
-              newEndY = mouseY;
+              newEnd = { x: mouseX, y: mouseY };
           }
 
-          // Calculate new position, width, height
-          const newX = Math.min(newStartX, newEndX);
-          const newY = Math.min(newStartY, newEndY);
-          const newWidth = Math.abs(newEndX - newStartX);
-          const newHeight = Math.abs(newEndY - newStartY);
+          const newX = Math.min(newStart.x, newEnd.x);
+          const newY = Math.min(newStart.y, newEnd.y);
+          const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
+          const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
 
-          // For horizontal/near-horizontal lines, keep height minimal
-          const finalHeight = newHeight < 5 ? 2 : newHeight;
+          const dx = newEnd.x - newStart.x;
+          const dy = newEnd.y - newStart.y;
+          const computedSloppiness = Math.min(200, Math.hypot(dx, dy) / 4);
+          const existingSloppiness = selectedElement.style?.sloppiness ?? 0;
+          const slValue = existingSloppiness > 0 ? existingSloppiness : computedSloppiness;
 
           updateLayer(pageIndex, selectedElement.id, {
               x: newX,
               y: newY,
               width: newWidth,
-              height: finalHeight,
+              height: newHeight,
+              style: { ...selectedElement.style, start: newStart, end: newEnd, sloppiness: slValue }
           });
       };
 
-      const handleMouseUp = () => {
+      const handlePointerUp = () => {
           setDraggingEndpoint(null);
       };
 
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+      window.addEventListener('touchmove', handlePointerMove);
+      window.addEventListener('touchend', handlePointerUp);
 
       return () => {
-          window.removeEventListener('mousemove', handleMouseMove);
-          window.removeEventListener('mouseup', handleMouseUp);
+          window.removeEventListener('mousemove', handlePointerMove);
+          window.removeEventListener('mouseup', handlePointerUp);
+          window.removeEventListener('touchmove', handlePointerMove);
+          window.removeEventListener('touchend', handlePointerUp);
       };
   }, [draggingEndpoint, selectedElement, pageIndex, scale, updateLayer]);
 
@@ -217,6 +244,26 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       {elements.map((el, index) => {
         const isSelected = el.id === selectedElementId;
         const isTextEditing = isSelected && isEditing && el.type === 'text';
+
+        // Precompute endpoint coordinates (absolute and local to element) for lines/arrows
+        const startPoint = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+        const endPoint = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+        const startLocalX = (startPoint.x - el.x) * scale;
+        const startLocalY = (startPoint.y - el.y) * scale;
+        const endLocalX = (endPoint.x - el.x) * scale;
+        const endLocalY = (endPoint.y - el.y) * scale;
+        const dx = endPoint.x - startPoint.x;
+        const dy = endPoint.y - startPoint.y;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        const nx = -dy / len;
+        const ny = dx / len;
+        const sl = el.style?.sloppiness ?? 0;
+        const midX = (startPoint.x + endPoint.x) / 2;
+        const midY = (startPoint.y + endPoint.y) / 2;
+        const controlX = midX + nx * sl;
+        const controlY = midY + ny * sl;
+        const controlLocalX = (controlX - el.x) * scale;
+        const controlLocalY = (controlY - el.y) * scale; 
 
         return (
         <div
@@ -267,33 +314,34 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                                 {el.style.arrowStart && (
                                     <marker
                                         id={`arrowhead-start-${el.id}`}
-                                        markerWidth="10"
-                                        markerHeight="10"
-                                        refX="0"
-                                        refY="5"
+                                        markerWidth="12"
+                                        markerHeight="12"
+                                        refX="6"
+                                        refY="6"
                                         orient="auto-start-reverse"
                                     >
-                                        <polygon points="10 0, 10 10, 0 5" fill={el.style.backgroundColor || '#000000'} />
+                                        <polygon points="10 0, 10 12, 0 6" fill={el.style.backgroundColor || '#000000'} />
                                     </marker>
                                 )}
                                 {el.style.arrowEnd && (
                                     <marker
                                         id={`arrowhead-end-${el.id}`}
-                                        markerWidth="10"
-                                        markerHeight="10"
-                                        refX="10"
-                                        refY="5"
+                                        markerWidth="12"
+                                        markerHeight="12"
+                                        refX="6"
+                                        refY="6"
                                         orient="auto"
                                     >
-                                        <polygon points="0 0, 10 5, 0 10" fill={el.style.backgroundColor || '#000000'} />
+                                        <polygon points="0 0, 10 6, 0 12" fill={el.style.backgroundColor || '#000000'} />
                                     </marker>
                                 )}
                             </>
                         )}
                     </defs>
-                    {el.style.sloppiness && el.style.sloppiness > 0 ? (
+
+                    {sl && sl > 0 ? (
                         <path
-                            d={`M 0 ${el.height * scale / 2} Q ${el.width * scale / 2} ${(el.height * scale / 2) - (el.style.sloppiness * scale)}, ${el.width * scale} ${el.height * scale / 2}`}
+                            d={`M ${startLocalX} ${startLocalY} Q ${controlLocalX} ${controlLocalY} ${endLocalX} ${endLocalY}`}
                             stroke={el.style.backgroundColor || '#000000'}
                             strokeWidth={el.style.borderWidth ?? 2}
                             strokeDasharray={
@@ -307,10 +355,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         />
                     ) : (
                         <line
-                            x1="0"
-                            y1={el.height * scale / 2}
-                            x2={el.width * scale}
-                            y2={el.height * scale / 2}
+                            x1={startLocalX}
+                            y1={startLocalY}
+                            x2={endLocalX}
+                            y2={endLocalY}
                             stroke={el.style.backgroundColor || '#000000'}
                             strokeWidth={el.style.borderWidth ?? 2}
                             strokeDasharray={
@@ -329,8 +377,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         <div
                             style={{
                                 position: 'absolute',
-                                left: '-6px',
-                                top: `${(el.height * scale / 2) - 6}px`,
+                                left: `${startLocalX - 6}px`,
+                                top: `${startLocalY - 6}px`,
                                 width: '12px',
                                 height: '12px',
                                 backgroundColor: '#3b82f6',
@@ -341,12 +389,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                                 zIndex: 1001,
                             }}
                             onMouseDown={(e) => handleEndpointMouseDown(e, 'start')}
+                            onTouchStart={(e) => handleEndpointMouseDown(e, 'start')}
                         />
                         <div
                             style={{
                                 position: 'absolute',
-                                left: `${el.width * scale - 6}px`,
-                                top: `${(el.height * scale / 2) - 6}px`,
+                                left: `${endLocalX - 6}px`,
+                                top: `${endLocalY - 6}px`,
                                 width: '12px',
                                 height: '12px',
                                 backgroundColor: '#3b82f6',
@@ -357,6 +406,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                                 zIndex: 1001,
                             }}
                             onMouseDown={(e) => handleEndpointMouseDown(e, 'end')}
+                            onTouchStart={(e) => handleEndpointMouseDown(e, 'end')}
                         />
                     </>
                 )}
@@ -409,13 +459,31 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 target.style.height = `${height}px`;
                 target.style.left = `${drag.left}px`;
                 target.style.top = `${drag.top}px`;
+                // Keep circles visually rounded while resizing
+                if (selectedElement?.type === 'circle') {
+                    const radiusPx = `${Math.min(width, height) / 2}px`;
+                    target.style.borderTopLeftRadius = radiusPx;
+                    target.style.borderTopRightRadius = radiusPx;
+                    target.style.borderBottomLeftRadius = radiusPx;
+                    target.style.borderBottomRightRadius = radiusPx;
+                }
             }}
             onResizeEnd={({ target }) => {
                  const width = parseFloat(target.style.width || '0') / scale;
                  const height = parseFloat(target.style.height || '0') / scale;
                  const x = parseFloat(target.style.left || '0') / scale;
                  const y = parseFloat(target.style.top || '0') / scale;
-                 if (selectedElement) updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
+                 if (selectedElement) {
+                     if (selectedElement.type === 'circle') {
+                         const oldWidth = selectedElement.width || 1;
+                         const oldRadius = selectedElement.style?.borderRadius ?? (oldWidth / 2);
+                         const newRadius = oldWidth > 0 ? (oldRadius / oldWidth) * width : Math.min(width, height) / 2;
+                         const clampedRadius = Math.min(newRadius, Math.min(width, height) / 2);
+                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y, style: { ...selectedElement.style, borderRadius: clampedRadius } });
+                     } else {
+                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
+                     }
+                 }
             }}
             
             // Rotate
@@ -435,7 +503,14 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           <Moveable
             target={targetRef.current}
             draggable={true}
-            
+            onDragStart={({ target }) => {
+                moveStartRef.current = {
+                    x: parseFloat(target.style.left || '0') / scale,
+                    y: parseFloat(target.style.top || '0') / scale,
+                    start: selectedElement?.style?.start ?? { x: selectedElement?.x ?? 0, y: (selectedElement?.y ?? 0) + (selectedElement?.height ?? 0) / 2 },
+                    end: selectedElement?.style?.end ?? { x: (selectedElement?.x ?? 0) + (selectedElement?.width ?? 0), y: (selectedElement?.y ?? 0) + (selectedElement?.height ?? 0) / 2 },
+                };
+            }}
             // Drag
             onDrag={({ target, left, top }) => {
                 target.style.left = `${left}px`;
@@ -444,7 +519,14 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             onDragEnd={({ target }) => {
                  const x = parseFloat(target.style.left || '0') / scale;
                  const y = parseFloat(target.style.top || '0') / scale;
-                 if (selectedElement) updateLayer(pageIndex, selectedElement.id, { x, y });
+                 if (selectedElement) {
+                     const dx = x - (moveStartRef.current?.x ?? 0);
+                     const dy = y - (moveStartRef.current?.y ?? 0);
+                     const newStart = { x: (moveStartRef.current?.start.x ?? 0) + dx, y: (moveStartRef.current?.start.y ?? 0) + dy };
+                     const newEnd = { x: (moveStartRef.current?.end.x ?? 0) + dx, y: (moveStartRef.current?.end.y ?? 0) + dy };
+                     updateLayer(pageIndex, selectedElement.id, { x, y, style: { ...selectedElement.style, start: newStart, end: newEnd } });
+                     moveStartRef.current = null;
+                 }
             }}
           />
       )}

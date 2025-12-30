@@ -32,6 +32,9 @@ export interface PDFElement {
     // Arrow-specific properties
     arrowStart?: boolean; // Arrow at start
     arrowEnd?: boolean; // Arrow at end
+    // Endpoint coordinates for lines/arrows (absolute page coordinates)
+    start?: { x: number; y: number };
+    end?: { x: number; y: number };
   };
 }
 
