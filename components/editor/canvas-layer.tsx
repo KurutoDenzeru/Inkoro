@@ -79,7 +79,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
           newElement = {
             id, type: 'line', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
-            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 2, start, end, sloppiness: 0 }
+            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 1, start, end, sloppiness: 0 }
           };
       } else if (activeTool === 'arrow') {
           const start = { x, y: y + 1 };
@@ -91,7 +91,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
           newElement = {
             id, type: 'arrow', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
-            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 2, arrowEnd: true, start, end, sloppiness: 0 }
+            style: { backgroundColor: '#000000', opacity: 1, borderWidth: 1, arrowEnd: true, start, end, sloppiness: 0 }
           };
       } 
       // ... other tools
@@ -178,43 +178,61 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           }
       };
 
+      let animationFrameId: number | null = null;
+      let lastMouseX = 0;
+      let lastMouseY = 0;
+
       const handlePointerMove = (e: MouseEvent | TouchEvent) => {
-          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
-          if (!canvas) return;
-
-          const rect = canvas.getBoundingClientRect();
           const { clientX, clientY } = getCoords(e);
-          const mouseX = (clientX - rect.left) / scale;
-          const mouseY = (clientY - rect.top) / scale;
+          lastMouseX = clientX;
+          lastMouseY = clientY;
 
-          const currStart = selectedElement.style?.start ?? { x: selectedElement.x, y: selectedElement.y + selectedElement.height / 2 };
-          const currEnd = selectedElement.style?.end ?? { x: selectedElement.x + selectedElement.width, y: selectedElement.y + selectedElement.height / 2 };
-
-          let newStart = { ...currStart };
-          let newEnd = { ...currEnd };
-
-          if (draggingEndpoint === 'start') {
-              newStart = { x: mouseX, y: mouseY };
-          } else {
-              newEnd = { x: mouseX, y: mouseY };
+          // Cancel previous frame if it hasn't run yet
+          if (animationFrameId !== null) {
+              cancelAnimationFrame(animationFrameId);
           }
 
-          const newX = Math.min(newStart.x, newEnd.x);
-          const newY = Math.min(newStart.y, newEnd.y);
-          const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
-          const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
+          // Schedule update on next animation frame for smooth performance
+          animationFrameId = requestAnimationFrame(() => {
+              const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+              if (!canvas) return;
 
-          // Keep existing sloppiness - don't auto-compute
-          updateLayer(pageIndex, selectedElement.id, {
-              x: newX,
-              y: newY,
-              width: newWidth,
-              height: newHeight,
-              style: { ...selectedElement.style, start: newStart, end: newEnd }
+              const rect = canvas.getBoundingClientRect();
+              const mouseX = (lastMouseX - rect.left) / scale;
+              const mouseY = (lastMouseY - rect.top) / scale;
+
+              const currStart = selectedElement.style?.start ?? { x: selectedElement.x, y: selectedElement.y + selectedElement.height / 2 };
+              const currEnd = selectedElement.style?.end ?? { x: selectedElement.x + selectedElement.width, y: selectedElement.y + selectedElement.height / 2 };
+
+              let newStart = { ...currStart };
+              let newEnd = { ...currEnd };
+
+              if (draggingEndpoint === 'start') {
+                  newStart = { x: mouseX, y: mouseY };
+              } else {
+                  newEnd = { x: mouseX, y: mouseY };
+              }
+
+              const newX = Math.min(newStart.x, newEnd.x);
+              const newY = Math.min(newStart.y, newEnd.y);
+              const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
+              const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
+
+              // Keep existing sloppiness - don't auto-compute
+              updateLayer(pageIndex, selectedElement.id, {
+                  x: newX,
+                  y: newY,
+                  width: newWidth,
+                  height: newHeight,
+                  style: { ...selectedElement.style, start: newStart, end: newEnd }
+              });
           });
       };
 
       const handlePointerUp = () => {
+          if (animationFrameId !== null) {
+              cancelAnimationFrame(animationFrameId);
+          }
           setDraggingEndpoint(null);
       };
 
@@ -224,6 +242,9 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       window.addEventListener('touchend', handlePointerUp);
 
       return () => {
+          if (animationFrameId !== null) {
+              cancelAnimationFrame(animationFrameId);
+          }
           window.removeEventListener('mousemove', handlePointerMove);
           window.removeEventListener('mouseup', handlePointerUp);
           window.removeEventListener('touchmove', handlePointerMove);
@@ -461,7 +482,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                  const x = parseFloat(target.style.left || '0') / scale;
                  const y = parseFloat(target.style.top || '0') / scale;
                  if (selectedElement) {
-                     updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
+                     if (selectedElement.type === 'circle') {
+                         // Always maintain perfect circle radius
+                         const newRadius = Math.min(width, height) / 2;
+                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y, style: { ...selectedElement.style, borderRadius: newRadius } });
+                     } else {
+                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
+                     }
                  }
             }}
             
@@ -482,6 +509,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           <Moveable
             target={targetRef.current}
             draggable={true}
+            hideDefaultLines={true}
+            renderDirections={[]}
             onDragStart={({ target }) => {
                 moveStartRef.current = {
                     x: parseFloat(target.style.left || '0') / scale,
