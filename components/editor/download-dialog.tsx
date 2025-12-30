@@ -41,10 +41,10 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
         // For image formats
         const { setCurrentPage } = useEditorStore.getState();
         const originalPage = currentPage;
-        
+
         let mimeType = 'image/png';
         let extension = 'png';
-        
+
         if (format === 'jpeg') {
           mimeType = 'image/jpeg';
           extension = 'jpg';
@@ -55,13 +55,13 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
           mimeType = 'image/png';
           extension = 'png';
         }
-        
+
         if (scope === 'current') {
           // Single page export
           const element = document.getElementById('pdf-page-container');
           if (element) {
-            const canvas = await html2canvas(element, { 
-              useCORS: true, 
+            const canvas = await html2canvas(element, {
+              useCORS: true,
               scale: 2,
               backgroundColor: '#ffffff',
               logging: false,
@@ -81,7 +81,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                 clonedDoc.head.appendChild(style);
               }
             });
-            
+
             const url = canvas.toDataURL(mimeType);
             const a = document.createElement('a');
             a.href = url;
@@ -92,18 +92,18 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
           // All pages export - create ZIP
           const zip = new JSZip();
           const element = document.getElementById('pdf-page-container');
-          
+
           if (element) {
             for (let page = 1; page <= numPages; page++) {
               // Navigate to page
               setCurrentPage(page);
-              
+
               // Wait for render
               await new Promise(resolve => setTimeout(resolve, 300));
-              
+
               // Capture page
-              const canvas = await html2canvas(element, { 
-                useCORS: true, 
+              const canvas = await html2canvas(element, {
+                useCORS: true,
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -112,7 +112,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                   // Fix oklch colors for html2canvas
                   const style = clonedDoc.createElement('style');
                   style.textContent = `
-                    * { 
+                    * {
                       color: rgb(0, 0, 0) !important;
                     }
                     [style*="oklch"] {
@@ -123,19 +123,19 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                   clonedDoc.head.appendChild(style);
                 }
               });
-              
+
               // Convert to blob
               const blob = await new Promise<Blob>((resolve) => {
                 canvas.toBlob((blob) => resolve(blob!), mimeType);
               });
-              
+
               // Add to zip
               zip.file(`${filename}-page-${page}.${extension}`, blob);
             }
-            
+
             // Restore original page
             setCurrentPage(originalPage);
-            
+
             // Generate and download ZIP
             const zipBlob = await zip.generateAsync({ type: 'blob' });
             const url = URL.createObjectURL(zipBlob);
@@ -164,7 +164,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
             Configure your export settings before downloading.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="filename">File Name</Label>
@@ -175,7 +175,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               placeholder="edited-document"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label>Format</Label>
             <div className="grid grid-cols-4 gap-2">
@@ -217,7 +217,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Scope</Label>
             <Tabs value={scope} onValueChange={(val) => setScope(val as any)} className="w-full">
@@ -228,7 +228,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
             </Tabs>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDownloading}>
             Cancel

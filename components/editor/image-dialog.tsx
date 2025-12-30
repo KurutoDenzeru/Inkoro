@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Upload, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { useEditorStore } from "@/lib/store";
 
@@ -59,7 +58,7 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileUpload(e.dataTransfer.files[0]);
     }
@@ -81,12 +80,11 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
             Upload an image from your device or paste a URL.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-6 py-4">
-          <div 
-            className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-              dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-primary/50'
-            }`}
+          <div
+            className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-primary/50'
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -97,10 +95,10 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
             <p className="text-sm text-muted-foreground text-center">
               Drag & drop an image here, or click to select
             </p>
-            <Input 
-              id="image-upload-input" 
-              type="file" 
-              className="hidden" 
+            <Input
+              id="image-upload-input"
+              type="file"
+              className="hidden"
               accept="image/*"
               onChange={handleChange}
             />
@@ -116,8 +114,8 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
           </div>
 
           <div className="flex gap-2">
-            <Input 
-              placeholder="https://example.com/image.png" 
+            <Input
+              placeholder="https://example.com/image.png"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
             />

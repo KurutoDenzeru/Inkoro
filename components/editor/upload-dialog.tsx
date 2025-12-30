@@ -9,8 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Upload, FileText } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming shadcn initialized this
 
 export function UploadDialog() {

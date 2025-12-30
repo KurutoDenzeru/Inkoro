@@ -1,5 +1,5 @@
 import { useEditorStore } from "@/lib/store";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
@@ -176,7 +176,7 @@ export function Toolbar() {
 
         {/* Desktop: Show controls inline */}
         <div className="hidden sm:flex items-center gap-2">
-          { /* Page Navigation */ }
+          { /* Page Navigation */}
           <Tooltip>
             <TooltipTrigger
               className={cn(iconButtonClass(false), prevDisabled && "opacity-50 cursor-not-allowed pointer-events-none")}
@@ -274,8 +274,8 @@ export function Toolbar() {
                 disabled={prevDisabled}
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-full transition-colors",
-                  prevDisabled 
-                    ? "opacity-40 cursor-not-allowed" 
+                  prevDisabled
+                    ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-accent hover:text-accent-foreground"
                 )}
               >
@@ -289,8 +289,8 @@ export function Toolbar() {
                 disabled={nextDisabled}
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-full transition-colors",
-                  nextDisabled 
-                    ? "opacity-40 cursor-not-allowed" 
+                  nextDisabled
+                    ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-accent hover:text-accent-foreground"
                 )}
               >
