@@ -25,6 +25,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
 
 export function PropertiesPanel() {
     const { layers, currentPage, selectedElementId, updateLayer, removeLayer, selectElement } = useEditorStore();
@@ -516,19 +517,14 @@ export function PropertiesPanel() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Sloppiness (Curvature)</Label>
-                        <div className="flex items-center gap-2">
-                            <Slider
-                                value={[element.style.sloppiness ?? 0]}
-                                max={100}
-                                step={1}
-                                onValueChange={(vals) => {
-                                    const value = Array.isArray(vals) ? vals[0] : vals;
-                                    handleStyleChange('sloppiness', value);
+                        <div className="flex items-center justify-between">
+                            <Label className="text-xs text-muted-foreground">Curved Line</Label>
+                            <Switch
+                                checked={(element.style.sloppiness ?? 0) > 0}
+                                onCheckedChange={(checked) => {
+                                    handleStyleChange('sloppiness', checked ? 50 : 0);
                                 }}
-                                className="flex-1"
                             />
-                            <span className="w-8 text-xs text-right text-muted-foreground">{element.style.sloppiness ?? 0}</span>
                         </div>
                     </div>
 

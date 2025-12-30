@@ -204,18 +204,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
           const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
 
-          const dx = newEnd.x - newStart.x;
-          const dy = newEnd.y - newStart.y;
-          const computedSloppiness = Math.min(200, Math.hypot(dx, dy) / 4);
-          const existingSloppiness = selectedElement.style?.sloppiness ?? 0;
-          const slValue = existingSloppiness > 0 ? existingSloppiness : computedSloppiness;
-
+          // Keep existing sloppiness - don't auto-compute
           updateLayer(pageIndex, selectedElement.id, {
               x: newX,
               y: newY,
               width: newWidth,
               height: newHeight,
-              style: { ...selectedElement.style, start: newStart, end: newEnd, sloppiness: slValue }
+              style: { ...selectedElement.style, start: newStart, end: newEnd }
           });
       };
 
@@ -295,7 +290,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 opacity: el.style.opacity ?? 1,
                 padding: el.type === 'text' ? '4px' : '0',
                 cursor: activeTool === 'select' ? (isSelected ? 'move' : 'pointer') : 'default',
-                outline: (isSelected && !isEditing) ? '2px solid #3b82f6' : 'none', 
+                outline: (isSelected && !isEditing && el.type !== 'line' && el.type !== 'arrow') ? '2px solid #3b82f6' : 'none', 
                 zIndex: isSelected ? 1000 : index + 1,
             }}
             onClick={(e) => handleElementClick(e, el.id)}
@@ -459,14 +454,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 target.style.height = `${height}px`;
                 target.style.left = `${drag.left}px`;
                 target.style.top = `${drag.top}px`;
-                // Keep circles visually rounded while resizing
-                if (selectedElement?.type === 'circle') {
-                    const radiusPx = `${Math.min(width, height) / 2}px`;
-                    target.style.borderTopLeftRadius = radiusPx;
-                    target.style.borderTopRightRadius = radiusPx;
-                    target.style.borderBottomLeftRadius = radiusPx;
-                    target.style.borderBottomRightRadius = radiusPx;
-                }
             }}
             onResizeEnd={({ target }) => {
                  const width = parseFloat(target.style.width || '0') / scale;
@@ -474,15 +461,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                  const x = parseFloat(target.style.left || '0') / scale;
                  const y = parseFloat(target.style.top || '0') / scale;
                  if (selectedElement) {
-                     if (selectedElement.type === 'circle') {
-                         const oldWidth = selectedElement.width || 1;
-                         const oldRadius = selectedElement.style?.borderRadius ?? (oldWidth / 2);
-                         const newRadius = oldWidth > 0 ? (oldRadius / oldWidth) * width : Math.min(width, height) / 2;
-                         const clampedRadius = Math.min(newRadius, Math.min(width, height) / 2);
-                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y, style: { ...selectedElement.style, borderRadius: clampedRadius } });
-                     } else {
-                         updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
-                     }
+                     updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
                  }
             }}
             
