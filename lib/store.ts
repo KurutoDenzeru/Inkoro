@@ -44,14 +44,14 @@ interface EditorState {
   numPages: number;
   currentPage: number;
   scale: number;
-  
+
   // Page dimensions (width, height) in PDF points
   pageDimensions: Record<number, { width: number; height: number }>;
-  
+
   // Elements per page. Key is page index (1-based to match PDF)
   layers: Record<number, PDFElement[]>;
   selectedElementId: string | null;
-  
+
   // Tool state
   activeTool: 'select' | 'text' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'signature' | 'draw' | null;
 
@@ -59,14 +59,14 @@ interface EditorState {
   setNumPages: (num: number) => void;
   setCurrentPage: (page: number) => void;
   setScale: (scale: number) => void;
-  
+
   setPageDimensions: (page: number, width: number, height: number) => void;
-  
+
   addLayer: (page: number, layer: PDFElement) => void;
   updateLayer: (page: number, id: string, updates: Partial<PDFElement>) => void;
   removeLayer: (page: number, id: string) => void;
   reorderLayers: (page: number, newLayers: PDFElement[]) => void;
-  
+
   selectElement: (id: string | null) => void;
   setActiveTool: (tool: EditorState['activeTool']) => void;
 }
@@ -82,10 +82,10 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedElementId: null,
   activeTool: 'select',
 
-  setPdfFile: (file) => set({ 
-    pdfFile: file, 
+  setPdfFile: (file) => set({
+    pdfFile: file,
     pdfUrl: URL.createObjectURL(file), // Remember to revoke potentially?
-    currentPage: 1 
+    currentPage: 1
   }),
   setNumPages: (num) => set((state) => ({
     numPages: num,
@@ -107,18 +107,18 @@ export const useEditorStore = create<EditorState>((set) => ({
       [page]: [...(state.layers[page] || []), layer]
     }
   })),
-  
+
   updateLayer: (page, id, updates) => set((state) => ({
     layers: {
       ...state.layers,
-      [page]: (state.layers[page] || []).map(l => 
-        l.id === id 
-          ? { 
-              ...l, 
-              ...updates,
-              // Deep merge style object if it exists in updates
-              style: updates.style ? { ...l.style, ...updates.style } : l.style
-            } 
+      [page]: (state.layers[page] || []).map(l =>
+        l.id === id
+          ? {
+            ...l,
+            ...updates,
+            // Deep merge style object if it exists in updates
+            style: updates.style ? { ...l.style, ...updates.style } : l.style
+          }
           : l
       )
     }

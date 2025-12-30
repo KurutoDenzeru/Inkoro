@@ -25,9 +25,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function PropertiesPanel() {
   const { layers, currentPage, selectedElementId, updateLayer, removeLayer, selectElement } = useEditorStore();
+  const isMobile = useIsMobile();
 
   const element = layers[currentPage]?.find(el => el.id === selectedElementId);
 
@@ -57,16 +60,19 @@ export function PropertiesPanel() {
     }
   };
 
-  return (
-    <div className="absolute top-20 right-4 z-40 w-72 bg-background/95 backdrop-blur shadow-xl border rounded-lg p-4 flex flex-col gap-4 animate-in slide-in-from-right-10 fade-in duration-200">
+  // Properties panel content (shared between mobile and desktop)
+  const panelContent = (
+    <>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {element.type === 'text' && <Type className="h-4 w-4 text-muted-foreground" />}
           <h4 className="font-semibold text-sm capitalize">{element.type} Properties</h4>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={() => selectElement(null)}>
-          <X className="h-4 w-4" />
-        </Button>
+        {!isMobile && (
+          <Button variant="ghost" size="icon-sm" onClick={() => selectElement(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <Separator />
 
@@ -587,7 +593,31 @@ export function PropertiesPanel() {
         <Button variant="destructive" className="w-full text-xs" onClick={handleDelete}>
           <Trash2 className="h-3 w-3 mr-2" /> Delete Layer
         </Button>
-      </div>
-    </div>
+      </div>    </>
+  );
+
+  // Mobile: Bottom sheet
+  if (isMobile) {
+    return (
+      <Sheet open={!!element} onOpenChange={(open) => !open && selectElement(null)}>
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              {element.type === 'text' && <Type className="h-4 w-4" />}
+              <span className="capitalize">{element.type} Properties</span>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            {panelContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Floating panel
+  return (
+    <div className="absolute top-20 right-4 z-40 w-72 bg-background/95 backdrop-blur shadow-xl border rounded-lg p-4 flex flex-col gap-4 animate-in slide-in-from-right-10 fade-in duration-200">
+      {panelContent}    </div>
   );
 }
