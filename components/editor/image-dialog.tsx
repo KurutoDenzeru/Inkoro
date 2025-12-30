@@ -73,9 +73,12 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Insert Image</DialogTitle>
+          <div className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>Insert Image</DialogTitle>
+          </div>
           <DialogDescription>
             Upload an image from your device or paste a URL.
           </DialogDescription>
@@ -91,7 +94,7 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
             onDrop={handleDrop}
             onClick={() => document.getElementById('image-upload-input')?.click()}
           >
-            <ImageIcon className="h-10 w-10 text-muted-foreground mb-4" />
+            <ImageIcon className="h-10 w-10 text-primary mb-4" />
             <p className="text-sm text-muted-foreground text-center">
               Drag & drop an image here, or click to select
             </p>
@@ -120,6 +123,7 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
               onChange={(e) => setImageUrl(e.target.value)}
             />
             <Button onClick={() => imageUrl && addImageToCanvas(imageUrl)}>
+              <LinkIcon className="h-4 w-4 mr-2" />
               Add
             </Button>
           </div>

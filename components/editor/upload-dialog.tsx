@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Upload } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming shadcn initialized this
 
 export function UploadDialog() {
@@ -51,9 +51,12 @@ export function UploadDialog() {
 
   return (
     <Dialog open={!pdfFile}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent showCloseButton={false} className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Upload PDF</DialogTitle>
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>Upload PDF</DialogTitle>
+          </div>
           <DialogDescription>
             Start by uploading a PDF file to edit and annotate.
           </DialogDescription>
