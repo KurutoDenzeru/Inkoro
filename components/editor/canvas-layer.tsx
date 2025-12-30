@@ -67,7 +67,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       } else if (activeTool === 'circle') {
           newElement = {
             id, type: 'circle', x, y, width: 100, height: 100, rotation: 0,
-            style: { backgroundColor: '#00ff00', opacity: 1, borderRadius: 50 }
+            style: { backgroundColor: '#ff0000', opacity: 1, borderRadius: 50 }
           };
       } else if (activeTool === 'line') {
           newElement = {
@@ -100,6 +100,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   // Text editing state
   const [isEditing, setIsEditing] = useState(false);
+  const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
   
   useEffect(() => {
     // Reset editing state when selection changes
@@ -141,6 +142,72 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const handleBlur = () => {
       setIsEditing(false);
   };
+
+  // Line/Arrow endpoint dragging
+  const handleEndpointMouseDown = (e: React.MouseEvent, endpoint: 'start' | 'end') => {
+      e.stopPropagation();
+      setDraggingEndpoint(endpoint);
+  };
+
+  useEffect(() => {
+      if (!draggingEndpoint || !selectedElement || (selectedElement.type !== 'line' && selectedElement.type !== 'arrow')) return;
+
+      const handleMouseMove = (e: MouseEvent) => {
+          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+          if (!canvas) return;
+
+          const rect = canvas.getBoundingClientRect();
+          const mouseX = (e.clientX - rect.left) / scale;
+          const mouseY = (e.clientY - rect.top) / scale;
+
+          // Calculate line from start to end point
+          const startX = selectedElement.x;
+          const startY = selectedElement.y + selectedElement.height / 2;
+          const endX = selectedElement.x + selectedElement.width;
+          const endY = selectedElement.y + selectedElement.height / 2;
+
+          let newStartX = startX;
+          let newStartY = startY;
+          let newEndX = endX;
+          let newEndY = endY;
+
+          if (draggingEndpoint === 'start') {
+              newStartX = mouseX;
+              newStartY = mouseY;
+          } else {
+              newEndX = mouseX;
+              newEndY = mouseY;
+          }
+
+          // Calculate new position, width, height
+          const newX = Math.min(newStartX, newEndX);
+          const newY = Math.min(newStartY, newEndY);
+          const newWidth = Math.abs(newEndX - newStartX);
+          const newHeight = Math.abs(newEndY - newStartY);
+
+          // For horizontal/near-horizontal lines, keep height minimal
+          const finalHeight = newHeight < 5 ? 2 : newHeight;
+
+          updateLayer(pageIndex, selectedElement.id, {
+              x: newX,
+              y: newY,
+              width: newWidth,
+              height: finalHeight,
+          });
+      };
+
+      const handleMouseUp = () => {
+          setDraggingEndpoint(null);
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mouseup', handleMouseUp);
+      };
+  }, [draggingEndpoint, selectedElement, pageIndex, scale, updateLayer]);
 
   return (
     <div 
@@ -188,6 +255,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             onDoubleClick={(e) => handleElementDoubleClick(e, el.id, el.type)}
         >
             {(el.type === 'line' || el.type === 'arrow') && (
+                <>
                 <svg 
                     width="100%" 
                     height="100%" 
@@ -201,11 +269,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                                         id={`arrowhead-start-${el.id}`}
                                         markerWidth="10"
                                         markerHeight="10"
-                                        refX="5"
+                                        refX="0"
                                         refY="5"
                                         orient="auto-start-reverse"
                                     >
-                                        <polygon points="0 0, 10 5, 0 10" fill={el.style.backgroundColor || '#000000'} />
+                                        <polygon points="10 0, 10 10, 0 5" fill={el.style.backgroundColor || '#000000'} />
                                     </marker>
                                 )}
                                 {el.style.arrowEnd && (
@@ -213,7 +281,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                                         id={`arrowhead-end-${el.id}`}
                                         markerWidth="10"
                                         markerHeight="10"
-                                        refX="5"
+                                        refX="10"
                                         refY="5"
                                         orient="auto"
                                     >
@@ -255,6 +323,44 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         />
                     )}
                 </svg>
+                {/* Endpoint handles when selected */}
+                {isSelected && (
+                    <>
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: '-6px',
+                                top: `${(el.height * scale / 2) - 6}px`,
+                                width: '12px',
+                                height: '12px',
+                                backgroundColor: '#3b82f6',
+                                border: '2px solid white',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                pointerEvents: 'auto',
+                                zIndex: 1001,
+                            }}
+                            onMouseDown={(e) => handleEndpointMouseDown(e, 'start')}
+                        />
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: `${el.width * scale - 6}px`,
+                                top: `${(el.height * scale / 2) - 6}px`,
+                                width: '12px',
+                                height: '12px',
+                                backgroundColor: '#3b82f6',
+                                border: '2px solid white',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                pointerEvents: 'auto',
+                                zIndex: 1001,
+                            }}
+                            onMouseDown={(e) => handleEndpointMouseDown(e, 'end')}
+                        />
+                    </>
+                )}
+                </>
             )}
             {(el.type === 'image' || el.type === 'signature') && el.content && (
                 <img 
@@ -279,13 +385,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         </div>
       )})}
       
-      {selectedElement && targetRef.current && !isEditing && (
+      {selectedElement && targetRef.current && !isEditing && selectedElement.type !== 'line' && selectedElement.type !== 'arrow' && (
           <Moveable
             target={targetRef.current}
             resizable={true}
             draggable={true}
-            rotatable={selectedElement.type !== 'line' && selectedElement.type !== 'arrow'}
-            edge={selectedElement.type === 'line' || selectedElement.type === 'arrow' ? ['e', 'w'] : false}
+            rotatable={true}
             
             // Drag
             onDrag={({ target, left, top }) => {
@@ -321,6 +426,25 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 if (selectedElement && lastEvent) {
                     updateLayer(pageIndex, selectedElement.id, { rotation: lastEvent.rotation });
                 }
+            }}
+          />
+      )}
+      
+      {/* Separate Moveable for line/arrow - only dragging */}
+      {selectedElement && targetRef.current && !isEditing && (selectedElement.type === 'line' || selectedElement.type === 'arrow') && (
+          <Moveable
+            target={targetRef.current}
+            draggable={true}
+            
+            // Drag
+            onDrag={({ target, left, top }) => {
+                target.style.left = `${left}px`;
+                target.style.top = `${top}px`;
+            }}
+            onDragEnd={({ target }) => {
+                 const x = parseFloat(target.style.left || '0') / scale;
+                 const y = parseFloat(target.style.top || '0') / scale;
+                 if (selectedElement) updateLayer(pageIndex, selectedElement.id, { x, y });
             }}
           />
       )}
