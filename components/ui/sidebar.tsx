@@ -109,6 +109,18 @@ function SidebarProvider({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
 
+  // When the device becomes mobile, collapse the desktop sidebar and open the mobile sheet.
+  React.useEffect(() => {
+    if (isMobile) {
+      // Close desktop sidebar and keep mobile sheet closed (collapsed)
+      setOpen(false)
+      setOpenMobile(false)
+    } else {
+      // Ensure mobile sheet is closed when returning to desktop
+      setOpenMobile(false)
+    }
+  }, [isMobile, setOpen, setOpenMobile])
+
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed"
