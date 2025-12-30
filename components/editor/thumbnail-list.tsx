@@ -8,7 +8,7 @@ import { PDFElement } from "@/lib/store";
 // Component to render a single element on thumbnail
 function ThumbnailElement({ element, scale }: { element: PDFElement; scale: number }) {
   const el = element;
-  
+
   // For lines/arrows, compute endpoint positions
   const startPoint = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
   const endPoint = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
@@ -95,8 +95,8 @@ function ThumbnailElement({ element, scale }: { element: PDFElement; scale: numb
               strokeWidth={(el.style.borderWidth ?? 1) * scale}
               strokeDasharray={
                 el.style.strokeStyle === 'dashed' ? `${10 * scale}, ${5 * scale}` :
-                el.style.strokeStyle === 'dotted' ? `${2 * scale}, ${5 * scale}` : 
-                'none'
+                  el.style.strokeStyle === 'dotted' ? `${2 * scale}, ${5 * scale}` :
+                    'none'
               }
               fill="none"
               markerStart={el.type === 'arrow' && el.style.arrowStart ? `url(#thumb-arrowhead-start-${el.id})` : undefined}
@@ -112,8 +112,8 @@ function ThumbnailElement({ element, scale }: { element: PDFElement; scale: numb
               strokeWidth={(el.style.borderWidth ?? 1) * scale}
               strokeDasharray={
                 el.style.strokeStyle === 'dashed' ? `${10 * scale}, ${5 * scale}` :
-                el.style.strokeStyle === 'dotted' ? `${2 * scale}, ${5 * scale}` : 
-                'none'
+                  el.style.strokeStyle === 'dotted' ? `${2 * scale}, ${5 * scale}` :
+                    'none'
               }
               markerStart={el.type === 'arrow' && el.style.arrowStart ? `url(#thumb-arrowhead-start-${el.id})` : undefined}
               markerEnd={el.type === 'arrow' && el.style.arrowEnd ? `url(#thumb-arrowhead-end-${el.id})` : undefined}
@@ -149,36 +149,36 @@ export function ThumbnailList() {
           const pageElements = useEditorStore.getState().layers[page] || [];
           const pageDim = pageDimensions[page];
           const thumbnailScale = pageDim ? thumbnailWidth / pageDim.width : 1;
-          
+
           return (
-          <div
-            key={page}
-            className={cn(
-              "cursor-pointer border-2 rounded-md overflow-hidden transition-all hover:border-primary hover:shadow-md mb-1.5",
-              currentPage === page ? "border-primary ring-2 ring-primary/20 shadow-lg" : "border-border"
-            )}
-            onClick={() => setCurrentPage(page)}
-          >
-            <div className="relative pointer-events-none bg-white">
-              {/* pointer-events-none to prevent text selection in thumbnail */}
-              <Page
-                pageNumber={page}
-                width={thumbnailWidth}
-                className="bg-white"
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-              />
-              {/* Render canvas elements on thumbnail */}
-              <div className="absolute inset-0 pointer-events-none">
-                {pageElements.map((el) => (
-                  <ThumbnailElement key={el.id} element={el} scale={thumbnailScale} />
-                ))}
+            <div
+              key={page}
+              className={cn(
+                "cursor-pointer border-2 rounded-md overflow-hidden transition-all hover:border-primary hover:shadow-md mb-1.5",
+                currentPage === page ? "border-primary ring-2 ring-primary/20 shadow-lg" : "border-border"
+              )}
+              onClick={() => setCurrentPage(page)}
+            >
+              <div className="relative pointer-events-none bg-white">
+                {/* pointer-events-none to prevent text selection in thumbnail */}
+                <Page
+                  pageNumber={page}
+                  width={thumbnailWidth}
+                  className="bg-white"
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                />
+                {/* Render canvas elements on thumbnail */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {pageElements.map((el) => (
+                    <ThumbnailElement key={el.id} element={el} scale={thumbnailScale} />
+                  ))}
+                </div>
+              </div>
+              <div className="text-center text-xs text-muted-foreground py-1 bg-muted font-medium">
+                Page {page}
               </div>
             </div>
-            <div className="text-center text-xs text-muted-foreground py-1 bg-muted font-medium">
-              Page {page}
-            </div>
-          </div>
           );
         })}
       </Document>
