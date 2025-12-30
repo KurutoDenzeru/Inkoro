@@ -144,6 +144,7 @@ export function Toolbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger
+              nativeButton={false}
               className={iconButtonClass(['rect', 'circle', 'line', 'arrow'].includes(activeTool || ''))}
               title="Shapes"
               aria-label="Shapes menu"
@@ -258,6 +259,7 @@ export function Toolbar() {
         {/* Mobile: Show dropdown menu with controls */}
         <DropdownMenu>
           <DropdownMenuTrigger
+            nativeButton={false}
             className={cn(iconButtonClass(false), "sm:hidden")}
             title="More options"
             aria-label="More options"

@@ -75,7 +75,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           const newX = Math.min(start.x, end.x);
           const newY = Math.min(start.y, end.y);
           const newWidth = Math.max(Math.abs(end.x - start.x), 2);
-          const newHeight = Math.max(Math.abs(end.y - start.y), 2);
+          const newHeight = Math.max(Math.abs(end.y - start.y), 10); // Minimum height for visibility
 
           newElement = {
             id, type: 'line', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
@@ -87,7 +87,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           const newX = Math.min(start.x, end.x);
           const newY = Math.min(start.y, end.y);
           const newWidth = Math.max(Math.abs(end.x - start.x), 2);
-          const newHeight = Math.max(Math.abs(end.y - start.y), 2);
+          const newHeight = Math.max(Math.abs(end.y - start.y), 10); // Minimum height for visibility
 
           newElement = {
             id, type: 'arrow', x: newX, y: newY, width: newWidth, height: newHeight, rotation: 0,
@@ -216,7 +216,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
               const newX = Math.min(newStart.x, newEnd.x);
               const newY = Math.min(newStart.y, newEnd.y);
               const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
-              const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
+              const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10); // Minimum height for visibility
 
               // Keep existing sloppiness - don't auto-compute
               updateLayer(pageIndex, selectedElement.id, {
@@ -390,6 +390,61 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 {/* Endpoint handles when selected */}
                 {isSelected && (
                     <>
+                        {/* Draggable center handle for moving entire line/arrow */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: `${((startLocalX + endLocalX) / 2) - 8}px`,
+                                top: `${((startLocalY + endLocalY) / 2) - 8}px`,
+                                width: '16px',
+                                height: '16px',
+                                backgroundColor: '#3b82f6',
+                                border: '2px solid white',
+                                borderRadius: '4px',
+                                cursor: 'move',
+                                pointerEvents: 'auto',
+                                zIndex: 1001,
+                            }}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const startClientX = e.clientX;
+                                const startClientY = e.clientY;
+                                const origStart = { ...startPoint };
+                                const origEnd = { ...endPoint };
+                                
+                                const handleMove = (ev: MouseEvent) => {
+                                    const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                                    if (!canvas) return;
+                                    const rect = canvas.getBoundingClientRect();
+                                    const dx = (ev.clientX - startClientX) / scale;
+                                    const dy = (ev.clientY - startClientY) / scale;
+                                    
+                                    const newStart = { x: origStart.x + dx, y: origStart.y + dy };
+                                    const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
+                                    const newX = Math.min(newStart.x, newEnd.x);
+                                    const newY = Math.min(newStart.y, newEnd.y);
+                                    const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
+                                    const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
+                                    
+                                    updateLayer(pageIndex, el.id, {
+                                        x: newX,
+                                        y: newY,
+                                        width: newWidth,
+                                        height: newHeight,
+                                        style: { ...el.style, start: newStart, end: newEnd }
+                                    });
+                                };
+                                
+                                const handleUp = () => {
+                                    document.removeEventListener('mousemove', handleMove);
+                                    document.removeEventListener('mouseup', handleUp);
+                                };
+                                
+                                document.addEventListener('mousemove', handleMove);
+                                document.addEventListener('mouseup', handleUp);
+                            }}
+                        />
                         <div
                             style={{
                                 position: 'absolute',
@@ -504,40 +559,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           />
       )}
       
-      {/* Separate Moveable for line/arrow - only dragging */}
-      {selectedElement && targetRef.current && !isEditing && (selectedElement.type === 'line' || selectedElement.type === 'arrow') && (
-          <Moveable
-            target={targetRef.current}
-            draggable={true}
-            hideDefaultLines={true}
-            renderDirections={[]}
-            onDragStart={({ target }) => {
-                moveStartRef.current = {
-                    x: parseFloat(target.style.left || '0') / scale,
-                    y: parseFloat(target.style.top || '0') / scale,
-                    start: selectedElement?.style?.start ?? { x: selectedElement?.x ?? 0, y: (selectedElement?.y ?? 0) + (selectedElement?.height ?? 0) / 2 },
-                    end: selectedElement?.style?.end ?? { x: (selectedElement?.x ?? 0) + (selectedElement?.width ?? 0), y: (selectedElement?.y ?? 0) + (selectedElement?.height ?? 0) / 2 },
-                };
-            }}
-            // Drag
-            onDrag={({ target, left, top }) => {
-                target.style.left = `${left}px`;
-                target.style.top = `${top}px`;
-            }}
-            onDragEnd={({ target }) => {
-                 const x = parseFloat(target.style.left || '0') / scale;
-                 const y = parseFloat(target.style.top || '0') / scale;
-                 if (selectedElement) {
-                     const dx = x - (moveStartRef.current?.x ?? 0);
-                     const dy = y - (moveStartRef.current?.y ?? 0);
-                     const newStart = { x: (moveStartRef.current?.start.x ?? 0) + dx, y: (moveStartRef.current?.start.y ?? 0) + dy };
-                     const newEnd = { x: (moveStartRef.current?.end.x ?? 0) + dx, y: (moveStartRef.current?.end.y ?? 0) + dy };
-                     updateLayer(pageIndex, selectedElement.id, { x, y, style: { ...selectedElement.style, start: newStart, end: newEnd } });
-                     moveStartRef.current = null;
-                 }
-            }}
-          />
-      )}
+      {/* Separate drag handling for line/arrow via endpoint handles only - no Moveable to avoid jumping */}
     </div>
   );
 }
