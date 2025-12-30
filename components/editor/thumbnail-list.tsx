@@ -140,7 +140,7 @@ export function ThumbnailList() {
 
   // Calculate optimal width for thumbnails based on aspect ratio
   // Smaller thumbnails for better sidebar fit
-  const thumbnailWidth = 160;
+  const thumbnailWidth = 240;
 
   return (
     <div className="flex flex-col gap-4">
