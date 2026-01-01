@@ -16,7 +16,8 @@ import {
   Minus,
   Shapes,
   ArrowRight,
-  MoreVertical
+  MoreVertical,
+  Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -35,6 +36,7 @@ import {
 import { ImageDialog } from "./image-dialog";
 import { SignatureDialog } from "./signature-dialog";
 import { DownloadDialog } from "./download-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Toolbar() {
   const {
@@ -45,8 +47,11 @@ export function Toolbar() {
     setScale,
     activeTool,
     setActiveTool,
-    pdfFile
+    pdfFile,
+    selectedElementId
   } = useEditorStore();
+
+  const isMobile = useIsMobile();
 
   // Dynamic navigation state
   const prevDisabled = currentPage <= 1;
@@ -64,7 +69,7 @@ export function Toolbar() {
   const iconButtonClass = (isActive = false) =>
     cn(
       buttonVariants({ variant: isActive ? 'default' : 'ghost', size: 'icon' }),
-      "h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all",
+      "h-7 w-7 sm:h-8 sm:w-8 rounded-none transition-all",
       isActive
         ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
         : "hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/30 dark:hover:text-red-300"
@@ -87,11 +92,36 @@ export function Toolbar() {
     setSignatureDialogOpen(true);
   };
 
+  const handlePropertiesClick = () => {
+    // Access the setMobilePropertiesOpen function from the store
+    const setOpen = (useEditorStore.getState() as any).setMobilePropertiesOpen;
+    if (setOpen) {
+      setOpen(true);
+    }
+  };
+
   if (!pdfFile) return null;
 
   return (
     <TooltipProvider>
-      <div className="fixed sm:absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-background/90 dark:bg-background/80 backdrop-blur-md border shadow-lg rounded-full px-2 sm:px-4 py-1 sm:py-2 flex items-center gap-2 z-50">
+      {/* Mobile Properties Button (above dock) */}
+      {isMobile && selectedElementId && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
+          <Tooltip>
+            <TooltipTrigger
+              className={cn(iconButtonClass(false), "bg-background/90 backdrop-blur-md border shadow-lg")}
+              onClick={handlePropertiesClick}
+              title="Properties"
+              aria-label="Open properties"
+            >
+              <Settings2 className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent>Properties</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
+      <div className="fixed sm:absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-background/90 dark:bg-background/80 backdrop-blur-md border shadow-lg rounded-none px-2 sm:px-4 py-1 sm:py-2 flex items-center gap-2 z-50">
         <div className="flex items-center gap-1">
 
           <Tooltip>

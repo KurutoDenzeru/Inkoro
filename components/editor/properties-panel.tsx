@@ -25,14 +25,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
 
 export function PropertiesPanel() {
   const { layers, currentPage, selectedElementId, updateLayer, removeLayer, selectElement } = useEditorStore();
   const isMobile = useIsMobile();
+  const [mobilePropertiesOpen, setMobilePropertiesOpen] = useState(false);
 
   const element = layers[currentPage]?.find(el => el.id === selectedElementId);
+
+  // Close mobile drawer when element is deselected
+  useEffect(() => {
+    if (!element && mobilePropertiesOpen) {
+      setMobilePropertiesOpen(false);
+    }
+  }, [element, mobilePropertiesOpen]);
+
+  // Expose the setter to the store for toolbar access
+  useEffect(() => {
+    if (isMobile) {
+      (useEditorStore.getState() as any).setMobilePropertiesOpen = setMobilePropertiesOpen;
+    }
+  }, [isMobile]);
 
   if (!element) return null;
 
@@ -63,18 +84,20 @@ export function PropertiesPanel() {
   // Properties panel content (shared between mobile and desktop)
   const panelContent = (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {element.type === 'text' && <Type className="h-4 w-4 text-muted-foreground" />}
-          <h4 className="font-semibold text-sm capitalize">{element.type} Properties</h4>
-        </div>
-        {!isMobile && (
-          <Button variant="ghost" size="icon-sm" onClick={() => selectElement(null)}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-      <Separator />
+      {!isMobile && (
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {element.type === 'text' && <Type className="h-4 w-4 text-muted-foreground" />}
+              <h4 className="font-semibold text-sm capitalize">{element.type} Properties</h4>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => selectElement(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <Separator />
+        </>
+      )}
 
       {element.type === 'text' && (
         <div className="space-y-4">
@@ -596,22 +619,22 @@ export function PropertiesPanel() {
       </div>    </>
   );
 
-  // Mobile: Bottom sheet
+  // Mobile: Drawer (manually opened)
   if (isMobile) {
     return (
-      <Sheet open={!!element} onOpenChange={(open) => !open && selectElement(null)}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {element.type === 'text' && <Type className="h-4 w-4" />}
-              <span className="capitalize">{element.type} Properties</span>
-            </SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col gap-4 mt-4">
+      <Drawer open={mobilePropertiesOpen && !!element} onOpenChange={setMobilePropertiesOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
+              {element?.type === 'text' && <Type className="h-4 w-4" />}
+              <span className="capitalize">{element?.type} Properties</span>
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-8">
             {panelContent}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
