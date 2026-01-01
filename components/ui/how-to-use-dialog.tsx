@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { BookOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,10 @@ export function HowToUseDialog() {
     <Dialog open={helpOpen} onOpenChange={(open) => setHelpOpen(open)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>How to Use Inkoro</DialogTitle>
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>How to Use Inkoro</DialogTitle>
+          </div>
           <DialogDescription>
             Quick tips to get started editing PDFs.
           </DialogDescription>

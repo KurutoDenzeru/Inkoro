@@ -159,7 +159,10 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Download Document</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>Download Document</DialogTitle>
+          </div>
           <DialogDescription>
             Configure your export settings before downloading.
           </DialogDescription>

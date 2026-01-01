@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,10 @@ export function AboutDialog() {
     <Dialog open={aboutOpen} onOpenChange={(open) => setAboutOpen(open)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>About Inkoro</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>About Inkoro</DialogTitle>
+          </div>
           <DialogDescription>
             Inkoro is a lightweight PDF editor built with React and pdf-lib. Use it to annotate, insert
             images, and export your edited PDFs.
