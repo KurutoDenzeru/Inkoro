@@ -140,7 +140,7 @@ export function ThumbnailList() {
 
   // Calculate optimal width for thumbnails based on aspect ratio
   // Smaller thumbnails for better sidebar fit
-  const thumbnailWidth = 240;
+  const thumbnailWidth = 220;
 
   return (
     <div className="flex flex-col gap-4">
@@ -154,7 +154,7 @@ export function ThumbnailList() {
             <div
               key={page}
               className={cn(
-                "cursor-pointer border-2 rounded-md overflow-hidden transition-all hover:border-primary hover:shadow-md mb-1.5",
+                "cursor-pointer border-2 rounded-md overflow-hidden transition-all hover:border-primary hover:shadow-md",
                 currentPage === page ? "border-primary ring-2 ring-primary/20 shadow-lg" : "border-border"
               )}
               onClick={() => setCurrentPage(page)}
@@ -175,7 +175,7 @@ export function ThumbnailList() {
                   ))}
                 </div>
               </div>
-              <div className="text-center text-xs text-muted-foreground py-1 bg-muted font-medium">
+              <div className="text-center text-xs border-t text-muted-foreground py-1 bg-muted font-medium">
                 Page {page}
               </div>
             </div>

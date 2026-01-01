@@ -43,9 +43,9 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
 
   return (
     <TooltipProvider delay={100}>
-      <div className="absolute top-4 left-4 z-50 bg-background/95 backdrop-blur shadow-xl border rounded-lg px-3 py-2 flex items-center gap-3 animate-in slide-in-from-left-10 fade-in duration-200">
+      <div className="absolute top-4 left-4 z-50 bg-background/95 backdrop-blur shadow-xl border rounded-none px-3 py-2 flex items-center gap-3 animate-in slide-in-from-left-10 fade-in duration-200">
         <div className="flex items-center gap-2">
-          <span className="text-primary text-xl">🪶</span>
+          <img src="/brand.png" alt="Inkoro" className="h-6 w-6 object-contain" />
           <span className="font-bold text-sm whitespace-nowrap">Inkoro</span>
         </div>
 
@@ -222,7 +222,7 @@ export function EditorLayout() {
           <SidebarHeader>
             <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center font-bold text-xl transition-all group-data-[collapsible=icon]:px-2">
-                <span className="text-primary mr-2">🪶</span>
+                <img src="/brand.png" alt="Inkoro" className="h-5 w-5 object-contain mr-2" />
                 <span className="group-data-[collapsible=icon]:hidden">Inkoro</span>
               </div>
               <div className="group-data-[collapsible=icon]:hidden flex items-center gap-2">
