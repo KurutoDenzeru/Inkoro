@@ -1,5 +1,5 @@
 import { useEditorStore } from "@/lib/store";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
@@ -104,22 +104,9 @@ export function Toolbar() {
 
   return (
     <TooltipProvider>
-      {/* Mobile Properties Button (above dock) */}
-      {isMobile && selectedElementId && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
-          <Tooltip>
-            <TooltipTrigger
-              className={cn(iconButtonClass(false), "bg-background/90 backdrop-blur-md border shadow-lg")}
-              onClick={handlePropertiesClick}
-              title="Properties"
-              aria-label="Open properties"
-            >
-              <Settings2 className="h-4 w-4" />
-            </TooltipTrigger>
-            <TooltipContent>Properties</TooltipContent>
-          </Tooltip>
-        </div>
-      )}
+
+
+
 
       <div className="fixed sm:absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-background/90 dark:bg-background/80 backdrop-blur-md border shadow-lg rounded-none px-2 sm:px-4 py-1 sm:py-2 flex items-center gap-2 z-50">
         <div className="flex items-center gap-1">
@@ -358,6 +345,29 @@ export function Toolbar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Mobile centered Properties dock above main dock with smooth slide animation */}
+        <div
+          className={cn(
+            "fixed left-1/2 -translate-x-1/2 z-50 sm:hidden bottom-12",
+            "transform-gpu transition-all duration-300 ease-in-out",
+            selectedElementId ? "translate-y-0 opacity-100 pointer-events-auto" : "translate-y-6 opacity-0 pointer-events-none"
+          )}
+          aria-hidden={!selectedElementId}
+        >
+          <Tooltip>
+            <TooltipTrigger
+              className="bg-background/90 backdrop-blur-md border shadow-lg rounded-none px-3 py-2 flex items-center gap-2"
+              onClick={handlePropertiesClick}
+              title="Properties"
+              aria-label="Open properties"
+            >
+              <Settings2 className="h-4 w-4" />
+              <span className="text-sm">Properties</span>
+            </TooltipTrigger>
+            <TooltipContent>Properties</TooltipContent>
+          </Tooltip>
+        </div>
 
         <ImageDialog open={imageDialogOpen} onOpenChange={setImageDialogOpen} />
         <SignatureDialog open={signatureDialogOpen} onOpenChange={setSignatureDialogOpen} />

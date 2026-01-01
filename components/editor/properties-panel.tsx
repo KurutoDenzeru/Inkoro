@@ -148,8 +148,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.fontWeight === 'bold' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.fontWeight === 'bold'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => toggleStyle('fontWeight', 'bold')}
@@ -161,8 +161,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.fontStyle === 'italic' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.fontStyle === 'italic'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => toggleStyle('fontStyle', 'italic')}
@@ -174,8 +174,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.textDecoration === 'underline' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.textDecoration === 'underline'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => toggleStyle('textDecoration', 'underline')}
@@ -192,8 +192,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.textAlign === 'left' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.textAlign === 'left'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => handleStyleChange('textAlign', 'left')}
@@ -205,8 +205,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.textAlign === 'center' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.textAlign === 'center'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => handleStyleChange('textAlign', 'center')}
@@ -218,8 +218,8 @@ export function PropertiesPanel() {
                 size="sm"
                 className={cn(
                   "h-6 w-6 p-0",
-                  element.style.textAlign === 'right' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                  element.style.textAlign === 'right'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300'
                     : ''
                 )}
                 onClick={() => handleStyleChange('textAlign', 'right')}

@@ -52,7 +52,7 @@ export function PDFViewer() {
       >
         <div
           id="pdf-page-container"
-          className={`relative border shadow-2xl bg-white mx-auto my-0 ${isMobile ? 'w-full px-4' : 'w-fit'} p-0`}
+          className={`relative border shadow-2xl bg-white mx-auto my-0 ${isMobile ? 'w-full' : 'w-fit'} p-0`}
           ref={setContainerRef}
         >
           <Page
