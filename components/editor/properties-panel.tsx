@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   Bold,
   Italic,
@@ -145,7 +146,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.fontWeight === 'bold' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.fontWeight === 'bold' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => toggleStyle('fontWeight', 'bold')}
               >
                 <Bold className="h-3 w-3" />
@@ -153,7 +159,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.fontStyle === 'italic' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.fontStyle === 'italic' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => toggleStyle('fontStyle', 'italic')}
               >
                 <Italic className="h-3 w-3" />
@@ -161,7 +172,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.textDecoration === 'underline' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.textDecoration === 'underline' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => toggleStyle('textDecoration', 'underline')}
               >
                 <Underline className="h-3 w-3" />
@@ -174,7 +190,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.textAlign === 'left' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.textAlign === 'left' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => handleStyleChange('textAlign', 'left')}
               >
                 <AlignLeft className="h-3 w-3" />
@@ -182,7 +203,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.textAlign === 'center' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.textAlign === 'center' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => handleStyleChange('textAlign', 'center')}
               >
                 <AlignCenter className="h-3 w-3" />
@@ -190,7 +216,12 @@ export function PropertiesPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 w-6 p-0 ${element.style.textAlign === 'right' ? 'bg-background' : ''}`}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  element.style.textAlign === 'right' 
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                    : ''
+                )}
                 onClick={() => handleStyleChange('textAlign', 'right')}
               >
                 <AlignRight className="h-3 w-3" />
@@ -612,7 +643,7 @@ export function PropertiesPanel() {
 
       <Separator />
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-2">
         <Button variant="destructive" className="w-full text-xs" onClick={handleDelete}>
           <Trash2 className="h-3 w-3 mr-2" /> Delete Layer
         </Button>
