@@ -458,9 +458,9 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             markerHeight="12"
                             refX="6"
                             refY="6"
-                            orient="auto-start-reverse"
+                            orient="auto"
                           >
-                            <polygon points="10 0, 10 12, 0 6" fill={el.style.backgroundColor || '#000000'} />
+                            <polygon points="0 0, 10 6, 0 12" fill={el.style.backgroundColor || '#000000'} />
                           </marker>
                         )}
                         {el.style.arrowEnd && (
@@ -514,6 +514,66 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 {/* Endpoint handles when selected */}
                 {isSelected && (
                   <>
+                    {/* Curve control point handle (only when sloppiness > 0) */}
+                    {sl > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${controlLocalX - 6}px`,
+                          top: `${controlLocalY - 6}px`,
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: '#10b981',
+                          border: '2px solid white',
+                          borderRadius: '50%',
+                          cursor: 'grab',
+                          pointerEvents: 'auto',
+                          zIndex: 1002,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const startClientX = e.clientX;
+                          const startClientY = e.clientY;
+                          const origSloppiness = el.style?.sloppiness ?? 0;
+
+                          const handleMove = (ev: MouseEvent) => {
+                            const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                            if (!canvas) return;
+                            const rect = canvas.getBoundingClientRect();
+                            const mouseX = (ev.clientX - rect.left) / scale;
+                            const mouseY = (ev.clientY - rect.top) / scale;
+
+                            const start = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+                            const end = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+                            const dx = end.x - start.x;
+                            const dy = end.y - start.y;
+                            const len = Math.max(1, Math.hypot(dx, dy));
+                            const nx = -dy / len;
+                            const ny = dx / len;
+                            const midX = (start.x + end.x) / 2;
+                            const midY = (start.y + end.y) / 2;
+
+                            // Calculate distance from mouse to midpoint projected onto normal
+                            const dmx = mouseX - midX;
+                            const dmy = mouseY - midY;
+                            const newSloppiness = dmx * nx + dmy * ny;
+
+                            updateLayer(pageIndex, el.id, {
+                              style: { ...el.style, sloppiness: newSloppiness }
+                            });
+                          };
+
+                          const handleUp = () => {
+                            document.removeEventListener('mousemove', handleMove);
+                            document.removeEventListener('mouseup', handleUp);
+                          };
+
+                          document.addEventListener('mousemove', handleMove);
+                          document.addEventListener('mouseup', handleUp);
+                        }}
+                      />
+                    )}
                     {/* Draggable center handle for moving entire line/arrow */}
                     <div
                       style={{
