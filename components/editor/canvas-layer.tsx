@@ -130,6 +130,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
   const moveStartRef = useRef<{ x: number; y: number; start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
+  const isComposingRef = useRef(false);
 
   useEffect(() => {
     // Reset editing state when selection changes
@@ -160,12 +161,112 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const handleElementDoubleClick = (e: React.MouseEvent, id: string, type: string) => {
     if (type === 'text') {
       setIsEditing(true);
+      // Focus editable container and set caret at click location if possible (fallback to end)
+      requestAnimationFrame(() => {
+        const elDiv = elementRefs.current[id];
+        if (elDiv) {
+          const editable = elDiv.querySelector('[contenteditable]') as HTMLElement | null;
+          if (editable) {
+            try {
+              editable.focus();
+              // Try to position caret near click using offset from point
+              // We fallback to end of text if the browser doesn't support caretRangeFromPoint
+              let offset = (editable.innerText || '').length;
+
+              if ((document as any).caretRangeFromPoint) {
+                const range = (document as any).caretRangeFromPoint(e.clientX, e.clientY);
+                if (range) {
+                  const preRange = range.cloneRange();
+                  preRange.selectNodeContents(editable);
+                  preRange.setEnd(range.endContainer, range.endOffset);
+                  offset = preRange.toString().length;
+                }
+              } else if ((document as any).caretPositionFromPoint) {
+                const pos = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+                if (pos) {
+                  const preRange = document.createRange();
+                  preRange.setStart(editable, 0);
+                  preRange.setEnd(pos.offsetNode, pos.offset);
+                  offset = preRange.toString().length;
+                }
+              }
+
+              setCaretPosition(editable, offset);
+            } catch (err) {
+              // ignore
+            }
+          }
+        }
+      });
     }
   };
 
+  function getCaretCharacterOffsetWithin(element: Node) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return 0;
+    const range = sel.getRangeAt(0).cloneRange();
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    return preCaretRange.toString().length;
+  }
+
+  function setCaretPosition(element: Node, chars: number) {
+    const range = document.createRange();
+    const sel = window.getSelection();
+
+    // Try to focus the editable container first
+    try {
+      (element as HTMLElement).focus?.();
+    } catch (e) {
+      // ignore
+    }
+
+    let charCount = 0;
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    let node: Node | null = walker.nextNode();
+    while (node) {
+      const textLength = node.textContent?.length || 0;
+      if (charCount + textLength >= chars) {
+        const offset = Math.max(0, chars - charCount);
+        range.setStart(node, offset);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        return;
+      }
+      charCount += textLength;
+      node = walker.nextNode();
+    }
+    // fallback to end
+    const walker2 = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    let lastNode: Node | null = null;
+    while ((node = walker2.nextNode())) lastNode = node;
+    if (lastNode) {
+      const length = lastNode.textContent?.length || 0;
+      range.setStart(lastNode, length);
+      range.collapse(true);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }
+
   const handleTextChange = (e: React.FormEvent<HTMLDivElement>, id: string) => {
-    const newContent = e.currentTarget.innerText;
+    const target = e.currentTarget;
+    const newContent = target.innerText;
+    const caretOffset = getCaretCharacterOffsetWithin(target);
+
     updateLayer(pageIndex, id, { content: newContent });
+
+    if (!isComposingRef.current) {
+      requestAnimationFrame(() => {
+        try {
+          setCaretPosition(target, caretOffset);
+        } catch (err) {
+          console.debug('Cursor restore failed', err);
+        }
+      });
+    }
   };
 
   const handleBlur = () => {
@@ -526,6 +627,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 suppressContentEditableWarning
                 onBlur={handleBlur}
                 onInput={(e) => handleTextChange(e, el.id)}
+                onCompositionStart={() => { isComposingRef.current = true; }}
+                onCompositionEnd={(e) => {
+                  isComposingRef.current = false;
+                  const target = e.currentTarget as HTMLDivElement;
+                  const caretOffset = getCaretCharacterOffsetWithin(target);
+                  requestAnimationFrame(() => setCaretPosition(target, caretOffset));
+                }}
                 style={{ cursor: isTextEditing ? 'text' : 'inherit' }}
               >
                 {el.content}
