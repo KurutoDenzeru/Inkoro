@@ -416,7 +416,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
               width: `${el.width * scale}px`,
               height: `${el.height * scale}px`,
               transform: `rotate(${el.rotation}deg)`,
-              backgroundColor: el.type === 'line' ? 'transparent' : (['rect', 'circle'].includes(el.type) ? el.style.backgroundColor : (el.style.backgroundColor || 'transparent')),
+              backgroundColor: (el.type === 'line' || el.type === 'arrow') ? 'transparent' : (['rect', 'circle'].includes(el.type) ? el.style.backgroundColor : (el.style.backgroundColor || 'transparent')),
               color: el.style.color,
               fontSize: `${(el.style.fontSize || 16) * scale}px`,
               fontFamily: el.style.fontFamily || 'Inter',
