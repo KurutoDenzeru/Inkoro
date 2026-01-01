@@ -460,7 +460,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             refY="6"
                             orient="auto"
                           >
-                            <polygon points="0 0, 10 6, 0 12" fill={el.style.backgroundColor || '#000000'} />
+                            <polygon points="10 0, 0 6, 10 12" fill={el.style.backgroundColor || '#000000'} />
                           </marker>
                         )}
                         {el.style.arrowEnd && (
@@ -514,36 +514,44 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                 {/* Endpoint handles when selected */}
                 {isSelected && (
                   <>
-                    {/* Curve control point handle (only when sloppiness > 0) */}
-                    {sl > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: `${controlLocalX - 6}px`,
-                          top: `${controlLocalY - 6}px`,
-                          width: '12px',
-                          height: '12px',
-                          backgroundColor: '#10b981',
-                          border: '2px solid white',
-                          borderRadius: '50%',
-                          cursor: 'grab',
-                          pointerEvents: 'auto',
-                          zIndex: 1002,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const startClientX = e.clientX;
-                          const startClientY = e.clientY;
-                          const origSloppiness = el.style?.sloppiness ?? 0;
+                    {/* Center handle - for moving line/arrow OR controlling curve when sloppiness > 0 */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: Math.abs(sl) > 0.5 ? `${controlLocalX - 8}px` : `${((startLocalX + endLocalX) / 2) - 8}px`,
+                        top: Math.abs(sl) > 0.5 ? `${controlLocalY - 8}px` : `${((startLocalY + endLocalY) / 2) - 8}px`,
+                        width: '16px',
+                        height: '16px',
+                        backgroundColor: Math.abs(sl) > 0.5 ? '#10b981' : '#3b82f6',
+                        border: '2px solid white',
+                        borderRadius: '4px',
+                        cursor: Math.abs(sl) > 0.5 ? 'grab' : 'move',
+                        pointerEvents: 'auto',
+                        zIndex: 1001,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectElement(el.id);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const startClientX = e.clientX;
+                        const startClientY = e.clientY;
+                        const origStart = { ...startPoint };
+                        const origEnd = { ...endPoint };
+                        const origSloppiness = el.style?.sloppiness ?? 0;
 
-                          const handleMove = (ev: MouseEvent) => {
-                            const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
-                            if (!canvas) return;
-                            const rect = canvas.getBoundingClientRect();
-                            const mouseX = (ev.clientX - rect.left) / scale;
-                            const mouseY = (ev.clientY - rect.top) / scale;
+                        const handleMove = (ev: MouseEvent) => {
+                          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                          if (!canvas) return;
+                          const rect = canvas.getBoundingClientRect();
+                          const mouseX = (ev.clientX - rect.left) / scale;
+                          const mouseY = (ev.clientY - rect.top) / scale;
 
+                          // If sloppiness > 0.5, control the curve; otherwise, move the entire line
+                          if (Math.abs(origSloppiness) > 0.5) {
+                            // Curve control mode
                             const start = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
                             const end = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
                             const dx = end.x - start.x;
@@ -554,7 +562,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             const midX = (start.x + end.x) / 2;
                             const midY = (start.y + end.y) / 2;
 
-                            // Calculate distance from mouse to midpoint projected onto normal
+                            // Calculate perpendicular distance (can be positive or negative for bidirectional curve)
                             const dmx = mouseX - midX;
                             const dmy = mouseY - midY;
                             const newSloppiness = dmx * nx + dmy * ny;
@@ -562,71 +570,35 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             updateLayer(pageIndex, el.id, {
                               style: { ...el.style, sloppiness: newSloppiness }
                             });
-                          };
+                          } else {
+                            // Move mode
+                            const dx = (ev.clientX - startClientX) / scale;
+                            const dy = (ev.clientY - startClientY) / scale;
 
-                          const handleUp = () => {
-                            document.removeEventListener('mousemove', handleMove);
-                            document.removeEventListener('mouseup', handleUp);
-                          };
+                            const newStart = { x: origStart.x + dx, y: origStart.y + dy };
+                            const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
+                            const minX = Math.min(newStart.x, newEnd.x);
+                            const minY = Math.min(newStart.y, newEnd.y);
+                            const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+                            const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
 
-                          document.addEventListener('mousemove', handleMove);
-                          document.addEventListener('mouseup', handleUp);
-                        }}
-                      />
-                    )}
-                    {/* Draggable center handle for moving entire line/arrow */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: `${((startLocalX + endLocalX) / 2) - 8}px`,
-                        top: `${((startLocalY + endLocalY) / 2) - 8}px`,
-                        width: '16px',
-                        height: '16px',
-                        backgroundColor: '#3b82f6',
-                        border: '2px solid white',
-                        borderRadius: '4px',
-                        cursor: 'move',
-                        pointerEvents: 'auto',
-                        zIndex: 1001,
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const startClientX = e.clientX;
-                        const startClientY = e.clientY;
-                        const origStart = { ...startPoint };
-                        const origEnd = { ...endPoint };
+                            // Add padding for stroke and curve - ensure minimum padding
+                            const strokeWidth = el.style?.borderWidth ?? 1;
+                            const sloppiness = el.style?.sloppiness ?? 0;
+                            const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2);
+                            const newX = minX - strokePadding;
+                            const newY = minY - strokePadding;
+                            const newWidth = rawWidth + strokePadding * 2;
+                            const newHeight = rawHeight + strokePadding * 2;
 
-                        const handleMove = (ev: MouseEvent) => {
-                          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
-                          if (!canvas) return;
-                          const rect = canvas.getBoundingClientRect();
-                          const dx = (ev.clientX - startClientX) / scale;
-                          const dy = (ev.clientY - startClientY) / scale;
-
-                          const newStart = { x: origStart.x + dx, y: origStart.y + dy };
-                          const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
-                          const minX = Math.min(newStart.x, newEnd.x);
-                          const minY = Math.min(newStart.y, newEnd.y);
-                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
-
-                          // Add padding for stroke and curve - ensure minimum padding
-                          const strokeWidth = el.style?.borderWidth ?? 1;
-                          const sloppiness = el.style?.sloppiness ?? 0;
-                          const strokePadding = Math.max(10, strokeWidth * 2 + sloppiness * 2);
-                          const newX = minX - strokePadding;
-                          const newY = minY - strokePadding;
-                          const newWidth = rawWidth + strokePadding * 2;
-                          const newHeight = rawHeight + strokePadding * 2;
-
-                          updateLayer(pageIndex, el.id, {
-                            x: newX,
-                            y: newY,
-                            width: newWidth,
-                            height: newHeight,
-                            style: { ...el.style, start: newStart, end: newEnd }
-                          });
+                            updateLayer(pageIndex, el.id, {
+                              x: newX,
+                              y: newY,
+                              width: newWidth,
+                              height: newHeight,
+                              style: { ...el.style, start: newStart, end: newEnd }
+                            });
+                          }
                         };
 
                         const handleUp = () => {
@@ -652,6 +624,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         pointerEvents: 'auto',
                         zIndex: 1001,
                       }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectElement(el.id);
+                      }}
                       onMouseDown={(e) => handleEndpointMouseDown(e, 'start')}
                       onTouchStart={(e) => handleEndpointMouseDown(e, 'start')}
                     />
@@ -668,6 +644,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         cursor: 'pointer',
                         pointerEvents: 'auto',
                         zIndex: 1001,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectElement(el.id);
                       }}
                       onMouseDown={(e) => handleEndpointMouseDown(e, 'end')}
                       onTouchStart={(e) => handleEndpointMouseDown(e, 'end')}
