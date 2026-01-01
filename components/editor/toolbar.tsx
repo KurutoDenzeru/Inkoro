@@ -113,6 +113,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(activeTool === 'select')}
               onClick={() => setActiveTool('select')}
               title="Select"
@@ -125,6 +126,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(activeTool === 'text')}
               onClick={() => setActiveTool('text')}
               title="Text"
@@ -137,6 +139,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(activeTool === 'image')}
               onClick={handleImageTool}
               title="Image"
@@ -149,6 +152,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(activeTool === 'signature')}
               onClick={handleSignatureTool}
               title="Signature"
@@ -161,7 +165,7 @@ export function Toolbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              nativeButton={false}
+              render={(props) => <button {...props} />}
               className={iconButtonClass(['rect', 'circle', 'line', 'arrow'].includes(activeTool || ''))}
               title="Shapes"
               aria-label="Shapes menu"
@@ -196,6 +200,7 @@ export function Toolbar() {
           { /* Page Navigation */}
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={cn(iconButtonClass(false), prevDisabled && "opacity-50 cursor-not-allowed pointer-events-none")}
               onClick={handlePrevClick}
               disabled={prevDisabled}
@@ -214,6 +219,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={cn(iconButtonClass(false), nextDisabled && "opacity-50 cursor-not-allowed pointer-events-none")}
               onClick={handleNextClick}
               disabled={nextDisabled}
@@ -232,6 +238,7 @@ export function Toolbar() {
         <div className="hidden sm:flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(false)}
               onClick={handleZoomOut}
               title="Zoom Out"
@@ -248,6 +255,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className={iconButtonClass(false)}
               onClick={handleZoomIn}
               title="Zoom In"
@@ -263,6 +271,7 @@ export function Toolbar() {
 
         <Tooltip>
           <TooltipTrigger
+            render={(props) => <button {...props} />}
             className={cn(iconButtonClass(false), "hidden sm:flex")}
             onClick={() => setDownloadDialogOpen(true)}
             title="Download"
@@ -349,7 +358,7 @@ export function Toolbar() {
         {/* Mobile centered Properties dock above main dock with smooth slide animation */}
         <div
           className={cn(
-            "fixed left-1/2 -translate-x-1/2 z-50 sm:hidden bottom-12",
+            "fixed left-1/2 -translate-x-1/2 z-50 sm:hidden bottom-16",
             "transform-gpu transition-all duration-300 ease-in-out",
             selectedElementId ? "translate-y-0 opacity-100 pointer-events-auto" : "translate-y-6 opacity-0 pointer-events-none"
           )}
@@ -357,6 +366,7 @@ export function Toolbar() {
         >
           <Tooltip>
             <TooltipTrigger
+              render={(props) => <button {...props} />}
               className="bg-background/90 backdrop-blur-md border shadow-lg rounded-none px-3 py-2 flex items-center gap-2"
               onClick={handlePropertiesClick}
               title="Properties"

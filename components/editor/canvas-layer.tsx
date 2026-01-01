@@ -74,11 +74,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const end = { x: x + 150, y };
       const minX = Math.min(start.x, end.x);
       const minY = Math.min(start.y, end.y);
-      const rawWidth = Math.max(Math.abs(end.x - start.x), 2);
-      const rawHeight = Math.max(Math.abs(end.y - start.y), 2);
+      const rawWidth = Math.max(Math.abs(end.x - start.x), 10);
+      const rawHeight = Math.max(Math.abs(end.y - start.y), 10);
 
-      // Add padding for stroke width (default 1) and potential curve
-      const padding = 50;
+      // Add minimal padding for stroke width
+      const padding = 10;
       const newX = minX - padding;
       const newY = minY - padding;
       const newWidth = rawWidth + padding * 2;
@@ -93,11 +93,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const end = { x: x + 150, y };
       const minX = Math.min(start.x, end.x);
       const minY = Math.min(start.y, end.y);
-      const rawWidth = Math.max(Math.abs(end.x - start.x), 2);
-      const rawHeight = Math.max(Math.abs(end.y - start.y), 2);
+      const rawWidth = Math.max(Math.abs(end.x - start.x), 10);
+      const rawHeight = Math.max(Math.abs(end.y - start.y), 10);
 
-      // Add padding for stroke width (default 1) and potential curve
-      const padding = 50;
+      // Add minimal padding for stroke width and arrowheads
+      const padding = 10;
       const newX = minX - padding;
       const newY = minY - padding;
       const newWidth = rawWidth + padding * 2;
@@ -330,11 +330,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
         const newX = Math.min(newStart.x, newEnd.x);
         const newY = Math.min(newStart.y, newEnd.y);
-        const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
-        const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
+        const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+        const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
 
-        // Add padding for stroke width and curve
-        const strokePadding = ((selectedElement.style?.borderWidth ?? 1) + (selectedElement.style?.sloppiness ?? 0)) * 2;
+        // Add padding for stroke width and curve - ensure minimum padding
+        const strokeWidth = selectedElement.style?.borderWidth ?? 1;
+        const sloppiness = selectedElement.style?.sloppiness ?? 0;
+        const strokePadding = Math.max(10, strokeWidth * 2 + sloppiness * 2);
         const paddedX = newX - strokePadding;
         const paddedY = newY - strokePadding;
         const paddedWidth = newWidth + strokePadding * 2;
@@ -546,11 +548,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
                           const minX = Math.min(newStart.x, newEnd.x);
                           const minY = Math.min(newStart.y, newEnd.y);
-                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 2);
-                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 2);
+                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
 
-                          // Add padding for stroke and curve
-                          const strokePadding = ((el.style?.borderWidth ?? 1) + (el.style?.sloppiness ?? 0)) * 2;
+                          // Add padding for stroke and curve - ensure minimum padding
+                          const strokeWidth = el.style?.borderWidth ?? 1;
+                          const sloppiness = el.style?.sloppiness ?? 0;
+                          const strokePadding = Math.max(10, strokeWidth * 2 + sloppiness * 2);
                           const newX = minX - strokePadding;
                           const newY = minY - strokePadding;
                           const newWidth = rawWidth + strokePadding * 2;
