@@ -159,3 +159,26 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+
+/* Moveable bounding box styles - Figma-like with square corner handles */
+.moveable-control-box .moveable-line {
+  background: #0d99ff !important; /* Blue border like Figma */
+}
+
+.moveable-control-box .moveable-control {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 0 !important; /* Square handles instead of circles */
+  background: #ffffff !important;
+  border: 1.5px solid #0d99ff !important;
+  margin-top: -4px !important;
+  margin-left: -4px !important;
+}
+
+/* Hide edge handles, only show corner handles */
+.moveable-control-box .moveable-direction.moveable-n,
+.moveable-control-box .moveable-direction.moveable-s,
+.moveable-control-box .moveable-direction.moveable-e,
+.moveable-control-box .moveable-direction.moveable-w {
+  display: none !important;
+}

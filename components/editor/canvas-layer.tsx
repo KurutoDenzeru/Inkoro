@@ -542,6 +542,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           draggable={true}
           rotatable={true}
 
+          // Only show 4 corner resize handles (no edge handles)
+          renderDirections={['nw', 'ne', 'sw', 'se']}
+          
+          // Square handles instead of circles
+          className="moveable-control-box"
+          controlPadding={0}
+          
           // Drag
           onDrag={({ target, left, top }) => {
             target.style.left = `${left}px`;
