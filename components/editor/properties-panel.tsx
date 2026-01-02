@@ -48,6 +48,27 @@ export function PropertiesPanel() {
 
   const element = layers[currentPage]?.find(el => el.id === selectedElementId);
 
+  // Common system and web fonts to help users pick an installed font. If a selected
+  // font isn't in this list, we treat it as a custom font and allow typing its exact name.
+  const fontOptions = [
+    { value: "Inter", label: "Inter" },
+    { value: "system-ui", label: "System UI" },
+    { value: "Segoe UI", label: "Segoe UI" },
+    { value: "Roboto", label: "Roboto" },
+    { value: "Helvetica Neue", label: "Helvetica Neue" },
+    { value: "Arial", label: "Arial" },
+    { value: "Verdana", label: "Verdana" },
+    { value: "Times New Roman", label: "Times New Roman" },
+    { value: "Georgia", label: "Georgia" },
+    { value: "Garamond", label: "Garamond" },
+    { value: "Courier New", label: "Courier New" },
+    { value: "Monaco", label: "Monaco" },
+    { value: "Trebuchet MS", label: "Trebuchet MS" },
+    { value: "Palatino", label: "Palatino" },
+    { value: "Impact", label: "Impact" },
+    { value: "Comic Sans MS", label: "Comic Sans MS" },
+  ];
+
   // Close mobile drawer when element is deselected
   useEffect(() => {
     if (!element && mobilePropertiesOpen) {
@@ -177,37 +198,74 @@ export function PropertiesPanel() {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label className="text-xs text-muted-foreground">Font</Label>
-              <Select
-                value={element.style.fontFamily || 'Inter'}
-                onValueChange={(val) => handleStyleChange('fontFamily', val)}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Inter">Inter</SelectItem>
-                  <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                  <SelectItem value="Courier New">Courier New</SelectItem>
-                  <SelectItem value="Georgia">Georgia</SelectItem>
-                </SelectContent>
-              </Select>
+
+              {/* Compute whether current font is one of our known options */}
+              {(() => {
+                const currentFont = element.style.fontFamily || 'Inter';
+                const fontIsKnown = fontOptions.some(f => f.value === currentFont);
+                const fontSelectValue = fontIsKnown ? currentFont : 'custom';
+
+                return (
+                  <>
+                    <Select
+                      value={fontSelectValue}
+                      onValueChange={(val) => {
+                        if (val === 'custom') {
+                          // Switch to custom mode (user will type exact font)
+                          handleStyleChange('fontFamily', '');
+                        } else {
+                          handleStyleChange('fontFamily', val);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs w-full">
+                        <SelectValue className="truncate" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {fontOptions.map((f) => (
+                          <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">Other...</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Show the resolved font name (useful when a custom font is active) */}
+                    <div className="text-xs text-muted-foreground mt-1 truncate" style={{ fontFamily: element.style.fontFamily || 'Inter' }}>
+                      {element.style.fontFamily || 'Inter'}
+                    </div>
+
+                    {/* If custom mode, allow typing the exact system font name */}
+                    {fontSelectValue === 'custom' && (
+                      <Input
+                        placeholder="Enter font name (system font)"
+                        value={element.style.fontFamily || ''}
+                        onChange={(e) => handleStyleChange('fontFamily', e.target.value)}
+                        className="h-8 text-xs mt-2"
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
+
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Size</Label>
               <Input
                 type="number"
                 value={element.style.fontSize || 16}
                 onChange={(e) => handleStyleChange('fontSize', Number(e.target.value))}
-                className="h-8 text-xs"
+                className="h-8 text-xs w-20"
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center border rounded-md p-1 bg-muted/20 gap-0.5">
+            <div className="flex items-center border rounded-none p-1 bg-muted/20 gap-0.5">
               <Button
                 variant="ghost"
                 size="sm"
@@ -251,7 +309,7 @@ export function PropertiesPanel() {
 
             <Separator orientation="vertical" className="h-6 mx-2" />
 
-            <div className="flex items-center border rounded-md p-1 bg-muted/20 gap-0.5">
+            <div className="flex items-center border rounded-none p-1 bg-muted/20 gap-0.5">
               <Button
                 variant="ghost"
                 size="sm"
@@ -297,7 +355,7 @@ export function PropertiesPanel() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Text Color</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.color || '#000000'}
@@ -311,7 +369,7 @@ export function PropertiesPanel() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Background</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.backgroundColor || '#ffffff'}
@@ -332,7 +390,7 @@ export function PropertiesPanel() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Fill</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.backgroundColor || '#transparent'}
@@ -346,7 +404,7 @@ export function PropertiesPanel() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Stroke</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.borderColor || '#000000'}
@@ -418,7 +476,7 @@ export function PropertiesPanel() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Fill</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.backgroundColor || '#transparent'}
@@ -432,7 +490,7 @@ export function PropertiesPanel() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Stroke</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.borderColor || '#000000'}
@@ -503,7 +561,7 @@ export function PropertiesPanel() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Stroke</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.backgroundColor || '#000000'}
@@ -517,7 +575,7 @@ export function PropertiesPanel() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Background</Label>
-              <div className="flex items-center gap-2 border rounded-md p-1 pr-2 bg-background">
+              <div className="flex items-center gap-2 border rounded-none p-1 pr-2 bg-background">
                 <input
                   type="color"
                   value={element.style.borderColor || '#ffffff'}
@@ -715,7 +773,7 @@ export function PropertiesPanel() {
       <Separator />
 
       <div className="flex gap-2 pt-2">
-        <Button variant="destructive" className="w-full text-xs" onClick={handleDelete}>
+        <Button variant="destructive" className="w-full text-sm cursor-pointer" onClick={handleDelete}>
           <Trash2 className="h-3 w-3 mr-2" /> Delete Layer
         </Button>
       </div>    </>
@@ -742,7 +800,7 @@ export function PropertiesPanel() {
 
   // Desktop: Floating panel
   return (
-    <div className="absolute top-20 right-4 z-40 w-72 bg-background/95 backdrop-blur shadow-xl border rounded-lg p-4 flex flex-col gap-4 animate-in slide-in-from-right-10 fade-in duration-200">
+    <div className="absolute top-20 right-4 z-40 w-72 bg-background/95 backdrop-blur shadow-xl border rounded-none p-4 flex flex-col gap-4 animate-in slide-in-from-right-10 fade-in duration-200">
       {panelContent}    </div>
   );
 }
