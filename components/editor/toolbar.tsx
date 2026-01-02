@@ -165,6 +165,7 @@ export function Toolbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger
+              nativeButton
               render={(props) => <button {...props} />}
               className={iconButtonClass(['rect', 'circle', 'line', 'arrow'].includes(activeTool || ''))}
               title="Shapes"

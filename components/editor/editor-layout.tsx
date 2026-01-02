@@ -67,6 +67,7 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
         <DropdownMenu>
           <Tooltip>
             <DropdownMenuTrigger
+              nativeButton
               render={<TooltipTrigger />}
               className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
             >
@@ -94,7 +95,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </DropdownMenuGroup>
 
       <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} onClick={() => onDownload()}>
+        <DropdownMenuItem nativeButton render={<TooltipTrigger />} onClick={() => onDownload()}>
           <Download className="h-4 w-4 mr-2" />
           Download
         </DropdownMenuItem>
@@ -102,7 +103,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </Tooltip>
 
       <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} onClick={() => {
+        <DropdownMenuItem nativeButton render={<TooltipTrigger />} onClick={() => {
           if (confirm('Start a new session? This will clear everything.')) {
             window.location.reload();
           }
@@ -114,7 +115,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </Tooltip>
 
       <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} onClick={() => {
+        <DropdownMenuItem nativeButton render={<TooltipTrigger />} onClick={() => {
           if (confirm('Reset session? This will remove all edits but keep the PDF.')) {
             useEditorStore.setState({ layers: {}, selectedElementId: null });
           }
