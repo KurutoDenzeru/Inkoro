@@ -92,10 +92,14 @@ export async function savePdf() {
           });
         }
         else if (el.type === 'line' || el.type === 'arrow') {
-          const startX = x;
-          const startY = pageHeight - el.y - el.height / 2;
-          const endX = x + el.width;
-          const endY = pageHeight - el.y - el.height / 2;
+          // Use stored start/end points if available, otherwise default to horizontal line
+          const startPoint = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+          const endPoint = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+          
+          const startX = startPoint.x;
+          const startY = pageHeight - startPoint.y;
+          const endX = endPoint.x;
+          const endY = pageHeight - endPoint.y;
           const color = hexToRgb(el.style.backgroundColor || '#000000');
           const strokeWidth = el.style.borderWidth ?? 2;
 

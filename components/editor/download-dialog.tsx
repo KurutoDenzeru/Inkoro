@@ -86,7 +86,9 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
             const a = document.createElement('a');
             a.href = url;
             a.download = `${filename}-page-${currentPage}.${extension}`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
           }
         } else {
           // All pages export - create ZIP
@@ -142,7 +144,9 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
             const a = document.createElement('a');
             a.href = url;
             a.download = `${filename}.zip`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
           }
         }
