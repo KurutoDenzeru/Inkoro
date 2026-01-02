@@ -243,7 +243,7 @@ export function Toolbar() {
 
 
 
-      <div className="fixed sm:absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-background/90 dark:bg-background/80 backdrop-blur-md border shadow-lg rounded-none px-2 sm:px-4 py-1 sm:py-2 flex items-center gap-2 z-50">
+      <div className="fixed sm:absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-background/90 dark:bg-background/80 backdrop-blur-md border shadow-lg rounded-none px-2 sm:px-2 py-1.5 sm:py-1.5 flex items-center gap-2 z-50">
         <div className="flex items-center gap-1">
 
           <Tooltip>

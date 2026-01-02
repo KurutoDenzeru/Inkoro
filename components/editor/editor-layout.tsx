@@ -273,7 +273,7 @@ export function EditorLayout() {
           </SidebarContent>
 
           <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-            <div className="p-3">
+            <div className="p-2.5 border-t">
               <Button
                 variant="default"
                 className={cn(

@@ -154,7 +154,7 @@ export function ThumbnailList() {
             <div
               key={page}
               className={cn(
-                "cursor-pointer border-2 rounded-none overflow-hidden transition-all hover:border-primary hover:shadow-md",
+                "cursor-pointer border-2 rounded-none overflow-hidden transition-all hover:border-primary hover:shadow-md mb-1.5",
                 currentPage === page ? "border-primary ring-2 ring-primary/20 shadow-lg" : "border-border"
               )}
               onClick={() => setCurrentPage(page)}
