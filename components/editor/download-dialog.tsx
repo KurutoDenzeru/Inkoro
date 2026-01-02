@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useEditorStore } from "@/lib/store";
 import { savePdf } from "@/lib/pdf-utils";
 import html2canvas from "html2canvas";
@@ -29,7 +29,6 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   const { pdfFile, currentPage, numPages } = useEditorStore();
   const [filename, setFilename] = useState("edited-document");
   const [format, setFormat] = useState<"pdf" | "png" | "jpeg" | "webp">("pdf");
-  const [scope, setScope] = useState<"all" | "current">("all");
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -56,10 +55,19 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
           extension = 'png';
         }
 
-        if (scope === 'current') {
-          // Single page export
-          const element = document.getElementById('pdf-page-container');
-          if (element) {
+        // Always export ALL pages as requested (create ZIP)
+        const zip = new JSZip();
+        const element = document.getElementById('pdf-page-container');
+
+        if (element) {
+          for (let page = 1; page <= numPages; page++) {
+            // Navigate to page
+            setCurrentPage(page);
+
+            // Wait for render
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Capture page
             const canvas = await html2canvas(element, {
               useCORS: true,
               scale: 2,
@@ -67,10 +75,10 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               logging: false,
               ignoreElements: (el) => el.classList?.contains('no-export') || false,
               onclone: (clonedDoc) => {
-                // Fix oklch colors for html2canvas by converting to rgb
+                // Fix oklch colors for html2canvas
                 const style = clonedDoc.createElement('style');
                 style.textContent = `
-                  * { 
+                  * {
                     color: rgb(0, 0, 0) !important;
                   }
                   [style*="oklch"] {
@@ -82,73 +90,41 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               }
             });
 
-            const url = canvas.toDataURL(mimeType);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}-page-${currentPage}.${extension}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            // Convert to blob
+            const quality = (format === 'jpeg' || format === 'webp') ? 0.95 : undefined;
+            const blob = await new Promise<Blob>((resolve, reject) => {
+              canvas.toBlob(
+                (blob) => {
+                  if (blob) {
+                    resolve(blob);
+                  } else {
+                    reject(new Error('Failed to create blob'));
+                  }
+                },
+                mimeType,
+                quality
+              );
+            });
+
+            // Add to zip
+            zip.file(`${filename}-page-${page}.${extension}`, blob);
           }
+
+          // Restore original page
+          setCurrentPage(originalPage);
+
+          // Generate and download ZIP
+          const zipBlob = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(zipBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${filename}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         } else {
-          // All pages export - create ZIP
-          const zip = new JSZip();
-          const element = document.getElementById('pdf-page-container');
-
-          if (element) {
-            for (let page = 1; page <= numPages; page++) {
-              // Navigate to page
-              setCurrentPage(page);
-
-              // Wait for render
-              await new Promise(resolve => setTimeout(resolve, 300));
-
-              // Capture page
-              const canvas = await html2canvas(element, {
-                useCORS: true,
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                ignoreElements: (el) => el.classList?.contains('no-export') || false,
-                onclone: (clonedDoc) => {
-                  // Fix oklch colors for html2canvas
-                  const style = clonedDoc.createElement('style');
-                  style.textContent = `
-                    * {
-                      color: rgb(0, 0, 0) !important;
-                    }
-                    [style*="oklch"] {
-                      color: rgb(0, 0, 0) !important;
-                      background-color: transparent !important;
-                    }
-                  `;
-                  clonedDoc.head.appendChild(style);
-                }
-              });
-
-              // Convert to blob
-              const blob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((blob) => resolve(blob!), mimeType);
-              });
-
-              // Add to zip
-              zip.file(`${filename}-page-${page}.${extension}`, blob);
-            }
-
-            // Restore original page
-            setCurrentPage(originalPage);
-
-            // Generate and download ZIP
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }
+          console.error('PDF container element not found');
         }
       }
       onOpenChange(false);
@@ -225,15 +201,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Scope</Label>
-            <Tabs value={scope} onValueChange={(val) => setScope(val as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="all">All Pages</TabsTrigger>
-                <TabsTrigger value="current">Current Page ({currentPage})</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+
         </div>
 
         <DialogFooter>

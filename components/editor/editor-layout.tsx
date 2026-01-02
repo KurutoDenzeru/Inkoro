@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadDialog } from "./upload-dialog";
 import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, BookOpen, Info, Sun, Moon, Monitor } from "lucide-react";
@@ -271,6 +271,26 @@ export function EditorLayout() {
               </div>
             )}
           </SidebarContent>
+
+          <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+            <div className="p-3">
+              <Button
+                variant="default"
+                className={cn(
+                  "w-full",
+                  "cursor-pointer transform-gpu transition-all duration-150",
+                  "hover:scale-[1.02] hover:shadow-md hover:shadow-black/10",
+                  "active:scale-95 focus-visible:ring-ring/50",
+                  "disabled:cursor-not-allowed disabled:opacity-50"
+                )}
+                onClick={() => setDownloadDialogOpen(true)}
+                disabled={!pdfFile}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </SidebarFooter>
         </Sidebar>
 
         <main className="flex-1 relative h-full w-full overflow-hidden bg-gray-100/50 dark:bg-gray-900/50">
