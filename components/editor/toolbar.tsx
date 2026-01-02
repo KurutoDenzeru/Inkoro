@@ -17,7 +17,9 @@ import {
   Shapes,
   ArrowRight,
   MoreVertical,
-  Settings2
+  Settings2,
+  Copy,
+  Clipboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -48,7 +50,9 @@ export function Toolbar() {
     activeTool,
     setActiveTool,
     pdfFile,
-    selectedElementId
+    selectedElementId,
+    addLayer,
+    selectElement
   } = useEditorStore();
 
   const isMobile = useIsMobile();
@@ -90,6 +94,137 @@ export function Toolbar() {
   const handleSignatureTool = () => {
     setActiveTool('signature');
     setSignatureDialogOpen(true);
+  };
+
+  const handleCopyClick = async () => {
+    const ok = await useEditorStore.getState().copySelection();
+    try {
+      const { toast } = await import('sonner');
+      toast(ok ? 'Copied to clipboard' : 'Nothing selected');
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  const handlePasteClick = async () => {
+    // Try advanced Clipboard API first (image support)
+    try {
+      if ((navigator as any).clipboard && (navigator as any).clipboard.read) {
+        const items: any[] = await (navigator as any).clipboard.read();
+        for (const item of items) {
+          // prefer images
+          const imgType = item.types.find((t: string) => t.startsWith('image/'));
+          if (imgType) {
+            const blob = await item.getType(imgType);
+            const dataUrl = await blobToDataUrl(blob);
+            // approximate center placement
+            const centerX = (window.innerWidth / 2) / (scale || 1);
+            const centerY = (window.innerHeight / 2) / (scale || 1);
+            const dims = await new Promise<{ w: number; h: number }>((res) => {
+              const i = new Image();
+              i.onload = () => res({ w: i.naturalWidth, h: i.naturalHeight });
+              i.onerror = () => res({ w: 200, h: 200 });
+              i.src = dataUrl;
+            });
+            const desiredPx = Math.min(dims.w, 300);
+            const desiredPxH = Math.round(desiredPx * (dims.h / Math.max(1, dims.w)));
+            const userW = desiredPx / (scale || 1);
+            const userH = desiredPxH / (scale || 1);
+            const id = crypto.randomUUID();
+            addLayer(currentPage, { id, type: 'image', x: centerX - userW / 2, y: centerY - userH / 2, width: userW, height: userH, rotation: 0, content: dataUrl, style: { opacity: 1 } });
+            selectElement(id);
+            setActiveTool('select');
+            try { const { toast } = await import('sonner'); toast('Pasted image'); } catch (err) {}
+            return;
+          }
+
+          // fallback to text
+          const textType = item.types.find((t: string) => t === 'text/plain' || t === 'text/html');
+          if (textType) {
+            const blob = await item.getType(textType);
+            const txt = await blob.text();
+            // try to parse Inkoro JSON
+            try {
+              const parsed = JSON.parse(txt);
+              if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) {
+                const offset = 10;
+                let lastId = null;
+                for (const el of parsed.elements) {
+                  const clone = JSON.parse(JSON.stringify(el));
+                  clone.id = crypto.randomUUID();
+                  clone.x = (clone.x ?? 100) + offset;
+                  clone.y = (clone.y ?? 100) + offset;
+                  addLayer(currentPage, clone);
+                  lastId = clone.id;
+                }
+                if (lastId) selectElement(lastId);
+                try { const { toast } = await import('sonner'); toast('Pasted elements'); } catch (err) {}
+                return;
+              }
+            } catch (err) {
+              // not JSON
+            }
+
+            // plain text paste
+            const id = crypto.randomUUID();
+            const defaultPxWidth = 300;
+            const userWidth = defaultPxWidth / (scale || 1);
+            const userHeight = 30 / (scale || 1);
+            const centerX = (window.innerWidth / 2) / (scale || 1);
+            const centerY = (window.innerHeight / 2) / (scale || 1);
+            addLayer(currentPage, { id, type: 'text', x: centerX - userWidth / 2, y: centerY - userHeight / 2, width: userWidth, height: userHeight, rotation: 0, content: txt, style: { fontSize: 16, color: '#000000' } });
+            selectElement(id);
+            setActiveTool('select');
+            try { const { toast } = await import('sonner'); toast('Pasted text'); } catch (err) {}
+            return;
+          }
+        }
+      } else {
+        // Fallback: read text
+        const txt = await navigator.clipboard.readText();
+        if (txt) {
+          const ink = ((): any => { try { const p = JSON.parse(txt); if (p && p.__inkoro) return p; } catch (e) { return null; } })();
+          if (ink && Array.isArray(ink.elements)) {
+            const offset = 10;
+            let lastId = null;
+            for (const el of ink.elements) {
+              const clone = JSON.parse(JSON.stringify(el));
+              clone.id = crypto.randomUUID();
+              clone.x = (clone.x ?? 100) + offset;
+              clone.y = (clone.y ?? 100) + offset;
+              addLayer(currentPage, clone);
+              lastId = clone.id;
+            }
+            if (lastId) selectElement(lastId);
+            try { const { toast } = await import('sonner'); toast('Pasted elements'); } catch (err) {}
+            return;
+          }
+
+          // otherwise just create text node
+          const id = crypto.randomUUID();
+          const defaultPxWidth = 300;
+          const userWidth = defaultPxWidth / (scale || 1);
+          const userHeight = 30 / (scale || 1);
+          const centerX = (window.innerWidth / 2) / (scale || 1);
+          const centerY = (window.innerHeight / 2) / (scale || 1);
+          addLayer(currentPage, { id, type: 'text', x: centerX - userWidth / 2, y: centerY - userHeight / 2, width: userWidth, height: userHeight, rotation: 0, content: txt, style: { fontSize: 16, color: '#000000' } });
+          selectElement(id);
+          setActiveTool('select');
+          try { const { toast } = await import('sonner'); toast('Pasted text'); } catch (err) {}
+          return;
+        }
+      }
+    } catch (err) {
+      console.debug('Paste failed', err);
+      try { const { toast } = await import('sonner'); toast('Paste failed'); } catch (err) {}
+    }
   };
 
   const handlePropertiesClick = () => {
@@ -192,6 +327,32 @@ export function Toolbar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => <button {...props} />}
+              className={iconButtonClass(false)}
+              onClick={handleCopyClick}
+              title="Copy"
+              aria-label="Copy selected"
+            >
+              <Copy className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent className="hidden sm:block">Copy</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => <button {...props} />}
+              className={iconButtonClass(false)}
+              onClick={handlePasteClick}
+              title="Paste"
+              aria-label="Paste"
+            >
+              <Clipboard className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent className="hidden sm:block">Paste</TooltipContent>
+          </Tooltip>
         </div>
 
         <Separator orientation="vertical" className="h-6" />
@@ -345,6 +506,18 @@ export function Toolbar() {
                 <ZoomIn className="h-4 w-4" />
               </button>
             </div>
+
+            <div className="h-px bg-border" />
+
+            <DropdownMenuItem nativeButton onClick={handleCopyClick}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
+            </DropdownMenuItem>
+
+            <DropdownMenuItem nativeButton onClick={handlePasteClick}>
+              <Clipboard className="h-4 w-4 mr-2" />
+              Paste
+            </DropdownMenuItem>
 
             <div className="h-px bg-border" />
 

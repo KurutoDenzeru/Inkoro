@@ -24,6 +24,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const elements = layers[pageIndex] || [];
   const selectedElement = elements.find(el => el.id === selectedElementId);
   const targetRef = useRef<HTMLElement | null>(null); // Ref to the currently selected DOM element
+  const containerRef = useRef<HTMLDivElement | null>(null); // ref for paste/copy placement
 
   // Need a way to map ids to refs
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -142,18 +143,41 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   }, [selectedElementId]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedElementId) return;
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (!selectedElementId) {
+        // Allow paste via keydown to fallback for some environments
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'v' || e.key === 'V')) {
+          // Let the paste event handle the content
+        }
+        return;
+      }
+
       if (isEditing) return; // Don't delete if editing text
 
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Ensure we aren't in an input (though isEditing checks this specific text case)
-        const activeTag = document.activeElement?.tagName.toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea') return;
+      // Don't intercept when typing in inputs or textareas
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
 
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         if (layers[pageIndex]?.find(el => el.id === selectedElementId)) {
           useEditorStore.getState().removeLayer(pageIndex, selectedElementId);
           selectElement(null);
+        }
+      }
+
+      // Copy shortcut (Cmd/Ctrl + C)
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        const ok = await useEditorStore.getState().copySelection();
+        if (ok) {
+          // Optional: toast notification if sonner is available
+          try {
+            const { toast } = await import('sonner');
+            toast('Copied to clipboard');
+          } catch (err) {
+            /* ignore */
+          }
         }
       }
     };
@@ -161,6 +185,164 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedElementId, pageIndex, isEditing, layers]);
+
+  // Handle paste events (images, text, HTML) and convert them into canvas elements
+  useEffect(() => {
+    const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const loadImage = (src: string) => new Promise<{ width: number; height: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => resolve({ width: 200, height: 200 });
+      img.src = src;
+    });
+
+    const addImageFromDataUrl = async (dataUrl: string) => {
+      const dims = await loadImage(dataUrl);
+      const desiredPx = Math.min(dims.width, 300);
+      const desiredPxHeight = Math.round(desiredPx * (dims.height / Math.max(1, dims.width)));
+      const userWidth = desiredPx / scale;
+      const userHeight = desiredPxHeight / scale;
+
+      const container = containerRef.current?.getBoundingClientRect();
+      const centerX = container ? (container.width / 2) / scale : 100;
+      const centerY = container ? (container.height / 2) / scale : 100;
+
+      const id = crypto.randomUUID();
+      addLayer(pageIndex, {
+        id,
+        type: 'image',
+        x: centerX - userWidth / 2,
+        y: centerY - userHeight / 2,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: dataUrl,
+        style: { opacity: 1 }
+      });
+      selectElement(id);
+      setActiveTool('select');
+    };
+
+    const addTextFromString = (text: string) => {
+      const id = crypto.randomUUID();
+      const defaultPxWidth = 300;
+      const userWidth = defaultPxWidth / scale;
+      const userHeight = 30 / scale;
+      const container = containerRef.current?.getBoundingClientRect();
+      const centerX = container ? (container.width / 2) / scale : 100;
+      const centerY = container ? (container.height / 2) / scale : 100;
+
+      addLayer(pageIndex, {
+        id,
+        type: 'text',
+        x: centerX - userWidth / 2,
+        y: centerY - userHeight / 2,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: text,
+        style: { fontSize: 16, color: '#000000' }
+      });
+      selectElement(id);
+      setActiveTool('select');
+    };
+
+    const tryParseInkoroJson = (text: string) => {
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) return parsed.elements as PDFElement[];
+      } catch (err) {
+        // ignore
+      }
+      return null;
+    };
+
+    const handlePaste = async (e: Event) => {
+      const cbEvent = e as ClipboardEvent;
+      if (!cbEvent.clipboardData) return;
+
+      // If focus is in an input or editable area, don't override normal paste
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
+
+      // Files (images) first
+      const files = Array.from(cbEvent.clipboardData.files || []);
+      if (files.length > 0) {
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            const dataUrl = await fileToDataUrl(file);
+            await addImageFromDataUrl(dataUrl);
+          }
+        }
+        return;
+      }
+
+      // Items - look for images first
+      const items = Array.from(cbEvent.clipboardData.items || []);
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            const dataUrl = await fileToDataUrl(file);
+            await addImageFromDataUrl(dataUrl);
+            return;
+          }
+        }
+      }
+
+      // HTML content - try to extract image src's
+      const html = cbEvent.clipboardData.getData('text/html');
+      if (html) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const img = doc.querySelector('img');
+          if (img && img.src) {
+            // If src is a data url or a remote URL we can try to insert it
+            await addImageFromDataUrl(img.src);
+            return;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      // Plain text
+      const text = cbEvent.clipboardData.getData('text/plain');
+      if (text) {
+        // Check for Inkoro JSON payload
+        const inkElements = tryParseInkoroJson(text);
+        if (inkElements) {
+          // Paste elements from JSON
+          const offset = 10;
+          let lastId: string | null = null;
+          for (const el of inkElements) {
+            const clone: PDFElement = JSON.parse(JSON.stringify(el));
+            clone.id = crypto.randomUUID();
+            clone.x = (clone.x ?? 100) + offset;
+            clone.y = (clone.y ?? 100) + offset;
+            addLayer(pageIndex, clone);
+            lastId = clone.id;
+          }
+          if (lastId) selectElement(lastId);
+          return;
+        }
+
+        // Otherwise it's plain text - create text element
+        addTextFromString(text);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste as EventListener);
+    return () => window.removeEventListener('paste', handlePaste as EventListener);
+  }, [pageIndex, scale, addLayer, selectElement, setActiveTool]);
 
   const handleElementDoubleClick = (e: React.MouseEvent, id: string, type: string) => {
     if (type === 'text') {
@@ -383,6 +565,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   return (
     <div
+      ref={containerRef}
       className="absolute inset-0 z-20 overflow-hidden"
       onClick={handleCanvasClick}
     >
