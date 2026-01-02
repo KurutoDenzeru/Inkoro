@@ -65,8 +65,61 @@ export function PropertiesPanel() {
   if (!element) return null;
 
   const handleStyleChange = (key: string, value: any) => {
+    // If changing stroke/arrow/curve for a line/arrow, we recompute and expand bounds to avoid clipping
+    const newStyle = { ...element.style, [key]: value };
+
+    // If this is a line/arrow and we're changing stroke/arrow/curve, adjust bounds to avoid clipping
+    if ((element.type === 'line' || element.type === 'arrow') && ['borderWidth', 'arrowStart', 'arrowEnd', 'sloppiness'].includes(key)) {
+      const start = element.style?.start ?? { x: element.x, y: element.y + element.height / 2 };
+      const end = element.style?.end ?? { x: element.x + element.width, y: element.y + element.height / 2 };
+      let minX = Math.min(start.x, end.x);
+      let minY = Math.min(start.y, end.y);
+      let maxX = Math.max(start.x, end.x);
+      let maxY = Math.max(start.y, end.y);
+
+      const sl = newStyle.sloppiness ?? 0;
+      if (Math.abs(sl) > 0.0001) {
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const tx = end.x - start.x;
+        const ty = end.y - start.y;
+        const tlen = Math.max(1, Math.hypot(tx, ty));
+        const ntx = tx / tlen;
+        const nty = ty / tlen;
+        const nx = -nty;
+        const ny = ntx;
+        const controlX = midX + nx * sl;
+        const controlY = midY + ny * sl;
+        minX = Math.min(minX, controlX);
+        minY = Math.min(minY, controlY);
+        maxX = Math.max(maxX, controlX);
+        maxY = Math.max(maxY, controlY);
+      }
+
+      const rawWidth = Math.max(Math.abs(maxX - minX), 10);
+      const rawHeight = Math.max(Math.abs(maxY - minY), 10);
+      const borderWidth = newStyle.borderWidth ?? 1;
+      const hasArrow = newStyle.arrowStart || newStyle.arrowEnd;
+      const arrowPad = hasArrow ? borderWidth * 6 : 0;
+      const strokePadding = Math.max(10, borderWidth * 2 + Math.abs(sl) * 2 + arrowPad);
+
+      const newX = minX - strokePadding;
+      const newY = minY - strokePadding;
+      const newWidth = rawWidth + strokePadding * 2;
+      const newHeight = rawHeight + strokePadding * 2;
+
+      updateLayer(currentPage, element.id, {
+        x: newX,
+        y: newY,
+        width: newWidth,
+        height: newHeight,
+        style: newStyle
+      });
+      return;
+    }
+
     updateLayer(currentPage, element.id, {
-      style: { ...element.style, [key]: value }
+      style: newStyle
     });
   };
 
