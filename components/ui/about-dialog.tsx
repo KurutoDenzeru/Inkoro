@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Info } from 'lucide-react';
+import { Info, Github, Instagram, Linkedin } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,38 +12,87 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useDialogStore } from '@/hooks/use-dialogs';
+import { Separator } from '@/components/ui/separator';
 
 export function AboutDialog() {
   const { aboutOpen, setAboutOpen } = useDialogStore();
 
   return (
     <Dialog open={aboutOpen} onOpenChange={(open) => setAboutOpen(open)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4 text-muted-foreground" />
             <DialogTitle>About Inkoro</DialogTitle>
           </div>
           <DialogDescription>
-            Inkoro is a lightweight PDF editor built with React and pdf-lib. Use it to annotate, insert
-            images, and export your edited PDFs.
+            A modern, lightweight PDF editor for annotations, images, and signatures.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-2 text-sm">
-          <p className="mb-2">Version: 0.1.0</p>
-          <p className="text-muted-foreground">Made with ❤️ — open source and free to use.</p>
+        <div className="space-y-4 py-2 text-sm">
+          <div>
+            <h3 className="font-semibold mb-2 text-base">Features</h3>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Add text, shapes, images, and signatures to PDFs</li>
+              <li>Drag and drop elements with precision</li>
+              <li>Real-time editing with undo/redo support</li>
+              <li>Export edited PDFs instantly</li>
+              <li>Dark mode support</li>
+              <li>Session persistence across page refreshes</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-2 text-base">Tech Stack</h3>
+            <div className="flex flex-wrap gap-2">
+              {['Next.js', 'React', 'TypeScript', 'Tailwind', 'pdf-lib', 'react-pdf', 'Zustand', 'Shadcn UI'].map((tech) => (
+                <span key={tech} className="px-2 py-1 bg-muted rounded-none text-xs">
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-2 text-base">Connect</h3>
+            <div className="flex gap-3">
+              <a
+                href="https://github.com/KurutoDenzeru/ChainPaper"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
+              >
+                <Github className="h-4 w-4" />
+                <span className="text-xs">GitHub</span>
+              </a>
+              <a
+                href="https://www.instagram.com/krtclcdy/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
+              >
+                <Instagram className="h-4 w-4" />
+                <span className="text-xs">Instagram</span>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/kurtcalacday/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
+              >
+                <Linkedin className="h-4 w-4" />
+                <span className="text-xs">LinkedIn</span>
+              </a>
+            </div>
+          </div>
+
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setAboutOpen(false)}>
             Close
           </Button>
-          <a href="https://github.com/" target="_blank">
-            <Button>
-              View on GitHub
-            </Button>
-          </a>
         </DialogFooter>
       </DialogContent>
     </Dialog>

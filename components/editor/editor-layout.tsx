@@ -3,7 +3,7 @@
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadDialog } from "./upload-dialog";
-import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, BookOpen, Info, Sun, Moon, Monitor } from "lucide-react";
+import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, Info, Sun, Moon, Monitor } from "lucide-react";
 import { useEditorStore } from "@/lib/store";
 import { LayerList } from "./layer-list";
 import { ThumbnailList } from "./thumbnail-list";
@@ -33,7 +33,6 @@ import {
 import { useState } from "react";
 import { DownloadDialog } from "./download-dialog";
 import { AboutDialog } from "@/components/ui/about-dialog";
-import { HowToUseDialog } from "@/components/ui/how-to-use-dialog";
 import { useDialogStore } from "@/hooks/use-dialogs";
 import { useTheme } from "next-themes";
 
@@ -84,7 +83,6 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
 
 function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
   const { isMobile } = useSidebar();
-  const setHelpOpen = useDialogStore((s) => s.setHelpOpen);
   const setAboutOpen = useDialogStore((s) => s.setAboutOpen);
   const { setTheme } = useTheme();
 
@@ -188,17 +186,6 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </DropdownMenuSub>
 
       <DropdownMenuSeparator />
-      <DropdownMenuGroup>
-        <DropdownMenuLabel>Help</DropdownMenuLabel>
-      </DropdownMenuGroup>
-
-      <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} onClick={() => setHelpOpen(true)}>
-          <BookOpen className="h-4 w-4 mr-2" />
-          How to Use
-        </DropdownMenuItem>
-        <TooltipContent hidden={isMobile}>How to Use</TooltipContent>
-      </Tooltip>
 
       <Tooltip>
         <DropdownMenuItem render={<TooltipTrigger />} onClick={() => setAboutOpen(true)}>
@@ -294,8 +281,10 @@ export function EditorLayout() {
         </Sidebar>
 
         <main className="flex-1 relative h-full w-full overflow-hidden bg-gray-100/50 dark:bg-gray-900/50">
-          <div className="absolute inset-0 flex items-center justify-center overflow-auto pt-8 pb-4 px-8 custom-scrollbar">
-            {pdfFile ? <PDFViewer /> : <div className="text-muted-foreground">No PDF Loaded</div>}
+          <div className="absolute inset-0 overflow-auto pt-8 pb-4 px-8 custom-scrollbar">
+            <div className="flex items-center justify-center min-h-full">
+              {pdfFile ? <PDFViewer /> : <div className="text-muted-foreground">No PDF Loaded</div>}
+            </div>
           </div>
 
           <SidebarToggleButton setDownloadDialogOpen={setDownloadDialogOpen} />
@@ -304,7 +293,6 @@ export function EditorLayout() {
           <UploadDialog />
           <DownloadDialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen} />
           <AboutDialog />
-          <HowToUseDialog />
         </main>
       </div>
     </SidebarProvider>

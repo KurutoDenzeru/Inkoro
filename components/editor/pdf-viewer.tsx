@@ -39,7 +39,7 @@ export function PDFViewer() {
   const effectiveScale = renderWidth && pageDim ? renderWidth / pageDim.width : scale;
 
   return (
-    <div className="relative flex items-center justify-center min-h-0 w-full">
+    <div className="relative w-full h-full">
       <Document
         file={pdfFile}
         onLoadSuccess={onDocumentLoadSuccess}
@@ -48,7 +48,7 @@ export function PDFViewer() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         }
-        className="flex flex-col items-center w-full"
+        className="flex flex-col items-center w-full h-full"
       >
         <div
           id="pdf-page-container"
