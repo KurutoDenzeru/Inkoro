@@ -35,6 +35,7 @@ import { DownloadDialog } from "./download-dialog";
 import { AboutDialog } from "@/components/ui/about-dialog";
 import { HowToUseDialog } from "@/components/ui/how-to-use-dialog";
 import { useDialogStore } from "@/hooks/use-dialogs";
+import { useTheme } from "next-themes";
 
 function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen: (open: boolean) => void }) {
   const { state, toggleSidebar } = useSidebar();
@@ -84,6 +85,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
   const { isMobile } = useSidebar();
   const setHelpOpen = useDialogStore((s) => s.setHelpOpen);
   const setAboutOpen = useDialogStore((s) => s.setAboutOpen);
+  const { setTheme } = useTheme();
 
   return (
     <DropdownMenuContent align="start">
@@ -159,7 +161,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
         </Tooltip>
         <DropdownMenuSubContent>
           <Tooltip>
-            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => document.documentElement.classList.remove('dark')}>
+            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => setTheme('light')}>
               <Sun className="h-4 w-4 mr-2" />
               Light Mode
             </DropdownMenuItem>
@@ -167,7 +169,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
           </Tooltip>
 
           <Tooltip>
-            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => document.documentElement.classList.add('dark')}>
+            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => setTheme('dark')}>
               <Moon className="h-4 w-4 mr-2" />
               Dark Mode
             </DropdownMenuItem>
@@ -175,10 +177,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
           </Tooltip>
 
           <Tooltip>
-            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => {
-              const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              document.documentElement.classList.toggle('dark', isDark);
-            }}>
+            <DropdownMenuItem render={<TooltipTrigger />} onClick={() => setTheme('system')}>
               <Monitor className="h-4 w-4 mr-2" />
               System Theme
             </DropdownMenuItem>

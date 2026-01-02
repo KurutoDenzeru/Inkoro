@@ -64,7 +64,7 @@ export function UploadDialog() {
 
         <div
           className={cn(
-            "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-xl transition-colors cursor-pointer",
+            "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-none transition-colors cursor-pointer",
             isDragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
           )}
           onDrop={onDrop}
@@ -72,7 +72,7 @@ export function UploadDialog() {
           onDragLeave={onDragLeave}
           onClick={() => document.getElementById('pdf-upload')?.click()}
         >
-          <div className="bg-primary/10 p-4 rounded-full mb-4">
+          <div className="bg-primary/10 p-4 rounded-none mb-4">
             <Upload className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold mb-2">Click to upload or drag and drop</h3>
