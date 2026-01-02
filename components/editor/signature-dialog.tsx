@@ -80,22 +80,68 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
     addSignatureToCanvas(dataUrl);
   };
 
-  const addSignatureToCanvas = (url: string) => {
-    const id = crypto.randomUUID();
-    addLayer(currentPage, {
-      id,
-      type: 'signature', // Treated as image essentially
-      x: 100,
-      y: 100,
-      width: 150,
-      height: 80, // Default signature aspect ratio roughly
-      rotation: 0,
-      content: url, // Data URL
-      style: { opacity: 1 }
-    });
-    selectElement(id);
-    setActiveTool('select');
-    onOpenChange(false);
+  const addSignatureToCanvas = async (url: string) => {
+    try {
+      const { cropImageDataUrl } = await import('@/lib/utils');
+      const cropped = await cropImageDataUrl(url, true);
+      const naturalW = cropped.width;
+      const naturalH = cropped.height;
+      const dataUrl = cropped.dataUrl;
+
+      // Cap displayed pixel size
+      const maxPx = 600;
+      const displayWpx = Math.min(naturalW, maxPx);
+      const displayHpx = Math.round(displayWpx * (naturalH / Math.max(1, naturalW)));
+
+      const scale = useEditorStore.getState().scale || 1;
+      const userWidth = displayWpx / scale;
+      const userHeight = displayHpx / scale;
+
+      const id = crypto.randomUUID();
+      addLayer(currentPage, {
+        id,
+        type: 'signature', // Treated as image essentially
+        x: 100,
+        y: 100,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: dataUrl, // Cropped Data URL
+        style: { opacity: 1 }
+      });
+      selectElement(id);
+      setActiveTool('select');
+      onOpenChange(false);
+    } catch (err) {
+      // Fallback
+      const img = new Image();
+      img.src = url;
+      await new Promise<void>((resolve) => {
+        if (img.complete) return resolve();
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+      const displayWpx = Math.min(img.naturalWidth || 150, 600);
+      const displayHpx = Math.round(displayWpx * ((img.naturalHeight || 80) / Math.max(1, img.naturalWidth || 150)));
+      const scale = useEditorStore.getState().scale || 1;
+      const userWidth = displayWpx / scale;
+      const userHeight = displayHpx / scale;
+      const id = crypto.randomUUID();
+      addLayer(currentPage, {
+        id,
+        type: 'signature',
+        x: 100,
+        y: 100,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: url,
+        style: { opacity: 1 }
+      });
+      selectElement(id);
+      setActiveTool('select');
+      onOpenChange(false);
+    }
   };
 
   const handleFileUpload = (file: File) => {

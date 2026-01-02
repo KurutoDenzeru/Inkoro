@@ -20,29 +20,81 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
 
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
-      addImageToCanvas(result);
+      await addImageToCanvas(result);
     };
     reader.readAsDataURL(file);
   };
 
-  const addImageToCanvas = (url: string) => {
-    const id = crypto.randomUUID();
-    addLayer(currentPage, {
-      id,
-      type: 'image',
-      x: 100,
-      y: 100,
-      width: 200,
-      height: 200,
-      rotation: 0,
-      content: url, // Data URL
-      style: { opacity: 1 }
-    });
-    selectElement(id);
-    setActiveTool('select');
-    onOpenChange(false);
+  const addImageToCanvas = async (url: string) => {
+    // Crop transparent/white borders to remove extra space
+    try {
+      const { cropImageDataUrl } = await import('@/lib/utils');
+      const cropped = await cropImageDataUrl(url, true);
+      const naturalW = cropped.width;
+      const naturalH = cropped.height;
+      const dataUrl = cropped.dataUrl;
+
+      // Cap the displayed pixel size
+      const maxPx = 600;
+      const displayWpx = Math.min(naturalW, maxPx);
+      const displayHpx = Math.round(displayWpx * (naturalH / Math.max(1, naturalW)));
+
+      const scale = useEditorStore.getState().scale || 1;
+      const userWidth = displayWpx / scale;
+      const userHeight = displayHpx / scale;
+
+      const id = crypto.randomUUID();
+      const centerX = 100; // default placement
+      const centerY = 100;
+
+      addLayer(currentPage, {
+        id,
+        type: 'image',
+        x: centerX - userWidth / 2,
+        y: centerY - userHeight / 2,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: dataUrl, // Cropped Data URL
+        style: { opacity: 1 }
+      });
+      selectElement(id);
+      setActiveTool('select');
+      onOpenChange(false);
+    } catch (err) {
+      // Fallback to raw image if cropping fails
+      const img = new Image();
+      img.src = url;
+      await new Promise<void>((resolve) => {
+        if (img.complete) return resolve();
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+      const displayWpx = Math.min(img.naturalWidth || 200, 600);
+      const displayHpx = Math.round(displayWpx * ((img.naturalHeight || 200) / Math.max(1, img.naturalWidth || 200)));
+      const scale = useEditorStore.getState().scale || 1;
+      const userWidth = displayWpx / scale;
+      const userHeight = displayHpx / scale;
+      const id = crypto.randomUUID();
+      const centerX = 100;
+      const centerY = 100;
+      addLayer(currentPage, {
+        id,
+        type: 'image',
+        x: centerX - userWidth / 2,
+        y: centerY - userHeight / 2,
+        width: userWidth,
+        height: userHeight,
+        rotation: 0,
+        content: url,
+        style: { opacity: 1 }
+      });
+      selectElement(id);
+      setActiveTool('select');
+      onOpenChange(false);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {

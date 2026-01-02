@@ -238,30 +238,62 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     });
 
     const addImageFromDataUrl = async (dataUrl: string) => {
-      const dims = await loadImage(dataUrl);
-      const desiredPx = Math.min(dims.width, 300);
-      const desiredPxHeight = Math.round(desiredPx * (dims.height / Math.max(1, dims.width)));
-      const userWidth = desiredPx / scale;
-      const userHeight = desiredPxHeight / scale;
+      try {
+        const { cropImageDataUrl } = await import('@/lib/utils');
+        const cropped = await cropImageDataUrl(dataUrl, true);
+        const dims = { width: cropped.width, height: cropped.height };
+        const src = cropped.dataUrl;
 
-      const container = containerRef.current?.getBoundingClientRect();
-      const centerX = container ? (container.width / 2) / scale : 100;
-      const centerY = container ? (container.height / 2) / scale : 100;
+        const desiredPx = Math.min(dims.width, 600);
+        const desiredPxHeight = Math.round(desiredPx * (dims.height / Math.max(1, dims.width)));
+        const userWidth = desiredPx / scale;
+        const userHeight = desiredPxHeight / scale;
 
-      const id = crypto.randomUUID();
-      addLayer(pageIndex, {
-        id,
-        type: 'image',
-        x: centerX - userWidth / 2,
-        y: centerY - userHeight / 2,
-        width: userWidth,
-        height: userHeight,
-        rotation: 0,
-        content: dataUrl,
-        style: { opacity: 1 }
-      });
-      selectElement(id);
-      setActiveTool('select');
+        const container = containerRef.current?.getBoundingClientRect();
+        const centerX = container ? (container.width / 2) / scale : 100;
+        const centerY = container ? (container.height / 2) / scale : 100;
+
+        const id = crypto.randomUUID();
+        addLayer(pageIndex, {
+          id,
+          type: 'image',
+          x: centerX - userWidth / 2,
+          y: centerY - userHeight / 2,
+          width: userWidth,
+          height: userHeight,
+          rotation: 0,
+          content: src,
+          style: { opacity: 1 }
+        });
+        selectElement(id);
+        setActiveTool('select');
+      } catch (err) {
+        // Fallback to previous method
+        const dims = await loadImage(dataUrl);
+        const desiredPx = Math.min(dims.width, 300);
+        const desiredPxHeight = Math.round(desiredPx * (dims.height / Math.max(1, dims.width)));
+        const userWidth = desiredPx / scale;
+        const userHeight = desiredPxHeight / scale;
+
+        const container = containerRef.current?.getBoundingClientRect();
+        const centerX = container ? (container.width / 2) / scale : 100;
+        const centerY = container ? (container.height / 2) / scale : 100;
+
+        const id = crypto.randomUUID();
+        addLayer(pageIndex, {
+          id,
+          type: 'image',
+          x: centerX - userWidth / 2,
+          y: centerY - userHeight / 2,
+          width: userWidth,
+          height: userHeight,
+          rotation: 0,
+          content: dataUrl,
+          style: { opacity: 1 }
+        });
+        selectElement(id);
+        setActiveTool('select');
+      }
     };
 
     const addTextFromString = (text: string) => {
