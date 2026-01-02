@@ -1,13 +1,41 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { useEditorStore } from './store';
 
-export async function savePdf() {
+export async function savePdf(opts?: {
+  filename?: string;
+  title?: string;
+  author?: string;
+  subject?: string;
+  keywords?: string[];
+  showInWindowTitleBar?: boolean;
+  fastWebView?: boolean;
+}) {
   const { pdfFile, layers, pageDimensions } = useEditorStore.getState();
   if (!pdfFile) return;
 
   try {
     const fileBuffer = await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(fileBuffer);
+
+    // Apply metadata (if provided)
+    if (opts?.title) {
+      pdfDoc.setTitle(opts.title, { showInWindowTitleBar: !!opts.showInWindowTitleBar });
+    }
+    if (opts?.author) {
+      pdfDoc.setAuthor(opts.author);
+    }
+    if (opts?.subject) {
+      pdfDoc.setSubject(opts.subject);
+    }
+    if (opts?.keywords && opts.keywords.length > 0) {
+      pdfDoc.setKeywords(opts.keywords);
+    }
+    if (opts?.fastWebView) {
+      // True linearization (Fast Web View) requires special rewriting of the PDF and is not supported by pdf-lib in-browser.
+      // We surface a warning here; the option will not actually linearize the file.
+      console.warn('Fast Web View (linearization) requested but is not supported client-side.');
+    }
+
     const pages = pdfDoc.getPages();
 
     // Embed font
@@ -197,7 +225,10 @@ export async function savePdf() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'edited_document.pdf';
+    const sanitizedFilename = opts?.filename?.trim()
+      ? (opts!.filename!.toLowerCase().endsWith('.pdf') ? opts!.filename!.trim() : `${opts!.filename!.trim()}.pdf`)
+      : 'edited_document.pdf';
+    link.download = sanitizedFilename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
