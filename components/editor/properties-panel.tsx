@@ -100,8 +100,8 @@ export function PropertiesPanel() {
       const rawHeight = Math.max(Math.abs(maxY - minY), 10);
       const borderWidth = newStyle.borderWidth ?? 1;
       const hasArrow = newStyle.arrowStart || newStyle.arrowEnd;
-      const arrowPad = hasArrow ? borderWidth * 6 : 0;
-      const strokePadding = Math.max(10, borderWidth * 2 + Math.abs(sl) * 2 + arrowPad);
+      const arrowPad = hasArrow ? borderWidth * 3 : 0;
+      const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
 
       const newX = minX - strokePadding;
       const newY = minY - strokePadding;

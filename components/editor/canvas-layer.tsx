@@ -338,11 +338,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
 
         // Add padding for stroke width and curve - ensure minimum padding
-        const strokeWidth = selectedElement.style?.borderWidth ?? 1;
-        const sloppiness = selectedElement.style?.sloppiness ?? 0;
+        const borderWidth = selectedElement.style?.borderWidth ?? 1;
         const hasArrow = !!(selectedElement.style?.arrowStart || selectedElement.style?.arrowEnd);
-        const arrowPad = hasArrow ? strokeWidth * 6 : 0;
-        const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2 + arrowPad);
+        const arrowPad = hasArrow ? borderWidth * 3 : 0; // reduced arrow padding
+        const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
         const paddedX = newX - strokePadding;
         const paddedY = newY - strokePadding;
         const paddedWidth = newWidth + strokePadding * 2;
@@ -410,6 +409,14 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         const controlY = midY + ny * sl;
         const controlLocalX = (controlX - el.x) * scale;
         const controlLocalY = (controlY - el.y) * scale;
+        // Marker sizing: clamp a user-space marker size to avoid runaway scaling at large border widths
+        const borderWidth = el.style?.borderWidth ?? 1;
+        const strokeWpx = borderWidth * scale;
+        // Base marker from stroke width but clamp; also limit to a fraction of segment length (25%) to avoid huge arrowheads on short lines
+        const rawMarker = Math.round(Math.max(8, Math.min(24, strokeWpx * 2)));
+        const maxByLen = Math.max(8, Math.min(24, Math.round(len * scale * 0.25)));
+        const markerLen = Math.min(rawMarker, maxByLen);
+        const markerHalf = markerLen / 2;
 
         return (
           <div
@@ -461,27 +468,27 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         {el.style.arrowStart && (
                           <marker
                             id={`arrowhead-start-${el.id}`}
-                            markerUnits="strokeWidth"
-                            markerWidth="10"
-                            markerHeight="12"
-                            refX="0"
-                            refY="6"
+                            markerUnits="userSpaceOnUse"
+                            markerWidth={markerLen}
+                            markerHeight={markerLen}
+                            refX={0}
+                            refY={markerHalf}
                             orient="auto"
                           >
-                            <polygon points="10 0, 0 6, 10 12" fill={el.style.backgroundColor || '#000000'} />
+                            <polygon points={`${markerLen} 0, 0 ${markerHalf}, ${markerLen} ${markerLen}`} fill={el.style.backgroundColor || '#000000'} />
                           </marker>
                         )}
                         {el.style.arrowEnd && (
                           <marker
                             id={`arrowhead-end-${el.id}`}
-                            markerUnits="strokeWidth"
-                            markerWidth="10"
-                            markerHeight="12"
-                            refX="10"
-                            refY="6"
+                            markerUnits="userSpaceOnUse"
+                            markerWidth={markerLen}
+                            markerHeight={markerLen}
+                            refX={markerLen}
+                            refY={markerHalf}
                             orient="auto"
                           >
-                            <polygon points="0 0, 10 6, 0 12" fill={el.style.backgroundColor || '#000000'} />
+                            <polygon points={`0 0, ${markerLen} ${markerHalf}, 0 ${markerLen}`} fill={el.style.backgroundColor || '#000000'} />
                           </marker>
                         )}
                       </>
@@ -528,11 +535,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const minY = Math.min(newStart.y, newEnd.y);
                           const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
                           const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
-                          const strokeWidth = el.style?.borderWidth ?? 1;
-                          const sloppiness = el.style?.sloppiness ?? 0;
+                          const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? strokeWidth * 6 : 0;
-                          const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2 + arrowPad);
+                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                           const newX = minX - strokePadding;
                           const newY = minY - strokePadding;
                           const newWidth = rawWidth + strokePadding * 2;
@@ -598,11 +604,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const minY = Math.min(newStart.y, newEnd.y);
                           const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
                           const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
-                          const strokeWidth = el.style?.borderWidth ?? 1;
-                          const sloppiness = el.style?.sloppiness ?? 0;
+                          const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? strokeWidth * 6 : 0;
-                          const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2 + arrowPad);
+                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                           const newX = minX - strokePadding;
                           const newY = minY - strokePadding;
                           const newWidth = rawWidth + strokePadding * 2;
@@ -628,9 +633,111 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                     />
                   )}
                 </svg>
+                {/* Draggable hotspot for lines/arrows (click & drag anywhere inside element to move) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'auto',
+                    cursor: isSelected ? 'move' : 'pointer',
+                    zIndex: 50,
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    selectElement(el.id);
+                    const startClientX = e.clientX;
+                    const startClientY = e.clientY;
+                    const origStart = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+                    const origEnd = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+
+                    const handleMove = (ev: MouseEvent) => {
+                      const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                      if (!canvas) return;
+                      const dx = (ev.clientX - startClientX) / scale;
+                      const dy = (ev.clientY - startClientY) / scale;
+
+                      const newStart = { x: origStart.x + dx, y: origStart.y + dy };
+                      const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
+
+                      const minX = Math.min(newStart.x, newEnd.x);
+                      const minY = Math.min(newStart.y, newEnd.y);
+                      const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+                      const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
+                      const borderWidth = el.style?.borderWidth ?? 1;
+                      const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
+                      const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                      const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
+                      const newX = minX - strokePadding;
+                      const newY = minY - strokePadding;
+                      const newWidth = rawWidth + strokePadding * 2;
+                      const newHeight = rawHeight + strokePadding * 2;
+
+                      updateLayer(pageIndex, el.id, {
+                        x: newX,
+                        y: newY,
+                        width: newWidth,
+                        height: newHeight,
+                        style: { ...el.style, start: newStart, end: newEnd }
+                      });
+                    };
+
+                    const handleUp = () => {
+                      document.removeEventListener('mousemove', handleMove);
+                      document.removeEventListener('mouseup', handleUp);
+                    };
+
+                    document.addEventListener('mousemove', handleMove);
+                    document.addEventListener('mouseup', handleUp);
+                  }}
+                />
                 {/* Endpoint handles when selected */}
                 {isSelected && (
                   <>
+                    {/* Rotate handle (top center) */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: '-28px',
+                        transform: 'translateX(-50%)',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        backgroundColor: '#fff',
+                        border: '2px solid #6366f1',
+                        cursor: 'grab',
+                        zIndex: 1002,
+                        pointerEvents: 'auto'
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                        if (!canvas) return;
+                        const rect = canvas.getBoundingClientRect();
+                        const centerX = (el.x + el.width / 2) * scale + rect.left;
+                        const centerY = (el.y + el.height / 2) * scale + rect.top;
+                        const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+                        const origRotation = el.rotation ?? 0;
+
+                        const handleMove = (ev: MouseEvent) => {
+                          const angle = Math.atan2(ev.clientY - centerY, ev.clientX - centerX);
+                          const deg = origRotation + (angle - startAngle) * 180 / Math.PI;
+                          updateLayer(pageIndex, el.id, { rotation: deg });
+                        };
+
+                        const handleUp = () => {
+                          document.removeEventListener('mousemove', handleMove);
+                          document.removeEventListener('mouseup', handleUp);
+                        };
+
+                        document.addEventListener('mousemove', handleMove);
+                        document.addEventListener('mouseup', handleUp);
+                      }}
+                    />
+
                     {/* Center handle - for moving line/arrow OR controlling curve */}
                     <div
                       style={{
@@ -680,8 +787,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const rawHeight = Math.max(Math.max(start.y, end.y, controlY) - minY, 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 6 : 0;
-                          const strokePadding = Math.max(10, borderWidth * 2 + Math.abs(newSl) * 2 + arrowPad);
+                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                           const newX = minX - strokePadding;
                           const newY = minY - strokePadding;
                           const newWidth = rawWidth + strokePadding * 2;
@@ -698,8 +805,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const rawHeight = Math.max(Math.abs(end.y - start.y), 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 6 : 0;
-                          const strokePadding = Math.max(10, borderWidth * 2 + arrowPad);
+                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                           const newX = minX - strokePadding;
                           const newY = minY - strokePadding;
                           const newWidth = rawWidth + strokePadding * 2;
@@ -774,10 +881,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             const maxY = Math.max(s.y, ept.y, controlY);
                             const rawWidth = Math.max(Math.abs(maxX - minX), 10);
                             const rawHeight = Math.max(Math.abs(maxY - minY), 10);
-                            const strokeWidth = el.style?.borderWidth ?? 1;
+                            const borderWidth = el.style?.borderWidth ?? 1;
                             const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                            const arrowPad = hasArrow ? strokeWidth * 6 : 0;
-                            const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(newSloppiness) * 2 + arrowPad);
+                            const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                            const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                             const paddedX = minX - strokePadding;
                             const paddedY = minY - strokePadding;
                             const paddedWidth = rawWidth + strokePadding * 2;
@@ -803,10 +910,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
 
                             // Add padding for stroke and curve - ensure minimum padding (include arrow pad)
-                            const strokeWidth = el.style?.borderWidth ?? 1;
+                            const borderWidth = el.style?.borderWidth ?? 1;
                             const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                            const arrowPad = hasArrow ? strokeWidth * 6 : 0;
-                            const strokePadding = Math.max(10, strokeWidth * 2 + arrowPad);
+                            const arrowPad = hasArrow ? borderWidth * 3 : 0;
+                            const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
                             const newX = minX - strokePadding;
                             const newY = minY - strokePadding;
                             const newWidth = rawWidth + strokePadding * 2;
