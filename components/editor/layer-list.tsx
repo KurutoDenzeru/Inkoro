@@ -64,7 +64,7 @@ function SortableItem(props: { id: string; type: string; label?: string; selecte
 
   return (
     <div ref={setNodeRef} style={style} className={cn(
-      "flex items-center gap-2 p-2 rounded-md mb-2 bg-card border min-w-0",
+      "flex items-center gap-2 p-2 rounded-none mb-2 bg-card border min-w-0",
       props.selected ? "border-primary bg-primary/5" : "hover:bg-accent"
     )}>
       <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">

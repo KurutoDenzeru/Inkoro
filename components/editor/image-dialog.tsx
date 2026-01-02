@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/store";
 
 interface ImageDialogProps {
@@ -86,18 +87,25 @@ export function ImageDialog({ open, onOpenChange }: ImageDialogProps) {
 
         <div className="grid gap-6 py-4">
           <div
-            className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-primary/50'
-              }`}
+            className={cn(
+              "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-none transition-colors cursor-pointer",
+              dragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50"
+            )}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
             onClick={() => document.getElementById('image-upload-input')?.click()}
           >
-            <ImageIcon className="h-10 w-10 text-primary mb-4" />
-            <p className="text-sm text-muted-foreground text-center">
+            <div className="bg-primary/10 p-4 rounded-none mb-4">
+              <Upload className="h-8 w-8 text-primary" />
+            </div>
+
+            <h3 className="text-lg font-semibold mb-2">Click to upload or drag and drop</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
               Drag & drop an image here, or click to select
             </p>
+
             <Input
               id="image-upload-input"
               type="file"

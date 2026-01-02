@@ -328,6 +328,8 @@ export function Toolbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <Separator orientation="vertical" className="h-6" />
+
           <Tooltip>
             <TooltipTrigger
               render={(props) => <button {...props} />}
@@ -461,7 +463,7 @@ export function Toolbar() {
                 onClick={handlePrevClick}
                 disabled={prevDisabled}
                 className={cn(
-                  "flex items-center justify-center h-8 w-8 rounded-full transition-colors",
+                  "flex items-center justify-center h-8 w-8 rounded-none transition-colors",
                   prevDisabled
                     ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-accent hover:text-accent-foreground"
@@ -476,7 +478,7 @@ export function Toolbar() {
                 onClick={handleNextClick}
                 disabled={nextDisabled}
                 className={cn(
-                  "flex items-center justify-center h-8 w-8 rounded-full transition-colors",
+                  "flex items-center justify-center h-8 w-8 rounded-none transition-colors",
                   nextDisabled
                     ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-accent hover:text-accent-foreground"
@@ -492,7 +494,7 @@ export function Toolbar() {
             <div className="flex items-center justify-between px-3 py-2.5">
               <button
                 onClick={handleZoomOut}
-                className="flex items-center justify-center h-8 w-8 rounded-full transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="flex items-center justify-center h-8 w-8 rounded-none transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <ZoomOut className="h-4 w-4" />
               </button>
@@ -501,7 +503,7 @@ export function Toolbar() {
               </span>
               <button
                 onClick={handleZoomIn}
-                className="flex items-center justify-center h-8 w-8 rounded-full transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="flex items-center justify-center h-8 w-8 rounded-none transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <ZoomIn className="h-4 w-4" />
               </button>

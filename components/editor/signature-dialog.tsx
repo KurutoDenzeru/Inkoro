@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Eraser, Upload as UploadIcon } from "lucide-react";
+import { Eraser, Upload as UploadIcon, Signature } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/store";
 
 interface SignatureDialogProps {
@@ -138,7 +139,10 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Add Signature</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Signature className="h-4 w-4 text-muted-foreground" />
+            <DialogTitle>Add Signature</DialogTitle>
+          </div>
           <DialogDescription>
             Draw your signature or upload an image.
           </DialogDescription>
@@ -151,7 +155,7 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
           </TabsList>
 
           <TabsContent value="draw" className="space-y-4">
-            <div className="border rounded-md bg-white touch-none mx-auto overflow-hidden relative">
+            <div className="border rounded-none bg-white touch-none mx-auto overflow-hidden relative">
               <canvas
                 ref={canvasRef}
                 width={400}
@@ -175,23 +179,33 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
                 <Eraser className="h-4 w-4" />
               </Button>
             </div>
-            <Button className="w-full" onClick={handleSaveSignature}>Insert Signature</Button>
+            <Button className="w-full" onClick={handleSaveSignature}>
+              <UploadIcon className="h-4 w-4 mr-2" />
+              Insert Signature
+            </Button>
           </TabsContent>
 
           <TabsContent value="upload">
             <div
-              className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer transition-colors h-50 ${dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-primary/50'
-                }`}
+              className={cn(
+                "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-none transition-colors cursor-pointer",
+                dragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50"
+              )}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => document.getElementById('sig-upload-input')?.click()}
             >
-              <UploadIcon className="h-10 w-10 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground text-center">
-                Drag & drop signature image here
+              <div className="bg-primary/10 p-4 rounded-none mb-4">
+                <UploadIcon className="h-8 w-8 text-primary" />
+              </div>
+
+              <h3 className="text-lg font-semibold mb-2">Click to upload or drag and drop</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-xs">
+                Drag & drop a signature image here, or click to select
               </p>
+
               <Input
                 id="sig-upload-input"
                 type="file"
