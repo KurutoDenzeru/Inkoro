@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useDialogStore } from '@/hooks/use-dialogs';
-import { Separator } from '@/components/ui/separator';
 
 export function AboutDialog() {
   const { aboutOpen, setAboutOpen } = useDialogStore();
@@ -26,7 +25,7 @@ export function AboutDialog() {
             <DialogTitle>About Inkoro</DialogTitle>
           </div>
           <DialogDescription>
-            A modern, lightweight PDF editor for annotations, images, and signatures.
+            Lightweight React + TypeScript PDF editor using react-pdf (pdf.js), Tailwind, and shadcn/ui; ideal for responsive interfaces and quick PDF workflows.
           </DialogDescription>
         </DialogHeader>
 
