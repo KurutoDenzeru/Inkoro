@@ -13,7 +13,7 @@ import { Upload, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming shadcn initialized this
 
 export function UploadDialog() {
-  const { pdfFile, setPdfFile } = useEditorStore();
+  const { pdfFile, setPdfFile, isHydrating } = useEditorStore();
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFile = (file: File) => {
@@ -50,7 +50,7 @@ export function UploadDialog() {
   };
 
   return (
-    <Dialog open={!pdfFile}>
+    <Dialog open={!pdfFile && !isHydrating}>
       <DialogContent showCloseButton={false} className="sm:max-w-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
