@@ -27,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{const t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');}else if(t==='light'){document.documentElement.classList.remove('dark');}else{const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark', prefersDark);} }catch(e){}})()`}</Script>
+    <html lang="en" className={`${inter.variable} light`} style={{ colorScheme: 'light' }}>
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{const t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');}else if(t==='light'){document.documentElement.classList.remove('dark');}else{const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark', prefersDark);} }catch(e){}})()`}</Script>
+      </head>
 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
