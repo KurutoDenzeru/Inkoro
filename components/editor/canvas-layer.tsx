@@ -38,10 +38,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   }, [selectedElementId, elements]);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    // If clicking on empty space and tool is active, create element
+    // Clicking on empty space should deselect any selected element
+    selectElement(null);
+
+    // If a non-select tool is active, proceed to create the element at click
     // Coordinate calculation needed relative to container
     if (activeTool === 'select') {
-      selectElement(null);
       return;
     }
 
@@ -479,7 +481,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                     )}
                   </defs>
 
-                  {sl && sl > 0 ? (
+                  {sl ? (
                     <path
                       d={`M ${startLocalX} ${startLocalY} Q ${controlLocalX} ${controlLocalY} ${endLocalX} ${endLocalY}`}
                       stroke={el.style.backgroundColor || '#000000'}
@@ -490,8 +492,58 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                             'none'
                       }
                       fill="none"
+                      style={{ pointerEvents: 'stroke' }}
                       markerStart={el.type === 'arrow' && el.style.arrowStart ? `url(#arrowhead-start-${el.id})` : undefined}
                       markerEnd={el.type === 'arrow' && el.style.arrowEnd ? `url(#arrowhead-end-${el.id})` : undefined}
+                      onClick={(e) => { e.stopPropagation(); selectElement(el.id); if (elementRefs.current[el.id]) { targetRef.current = elementRefs.current[el.id]; } }}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        selectElement(el.id);
+                        if (elementRefs.current[el.id]) { targetRef.current = elementRefs.current[el.id]; }
+                        const startClientX = e.clientX;
+                        const startClientY = e.clientY;
+                        const origStart = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+                        const origEnd = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+
+                        const handleMove = (ev: MouseEvent) => {
+                          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                          if (!canvas) return;
+                          const rect = canvas.getBoundingClientRect();
+                          const dx = (ev.clientX - startClientX) / scale;
+                          const dy = (ev.clientY - startClientY) / scale;
+
+                          const newStart = { x: origStart.x + dx, y: origStart.y + dy };
+                          const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
+
+                          const minX = Math.min(newStart.x, newEnd.x);
+                          const minY = Math.min(newStart.y, newEnd.y);
+                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
+                          const strokeWidth = el.style?.borderWidth ?? 1;
+                          const sloppiness = el.style?.sloppiness ?? 0;
+                          const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2);
+                          const newX = minX - strokePadding;
+                          const newY = minY - strokePadding;
+                          const newWidth = rawWidth + strokePadding * 2;
+                          const newHeight = rawHeight + strokePadding * 2;
+
+                          updateLayer(pageIndex, el.id, {
+                            x: newX,
+                            y: newY,
+                            width: newWidth,
+                            height: newHeight,
+                            style: { ...el.style, start: newStart, end: newEnd }
+                          });
+                        };
+
+                        const handleUp = () => {
+                          document.removeEventListener('mousemove', handleMove);
+                          document.removeEventListener('mouseup', handleUp);
+                        };
+
+                        document.addEventListener('mousemove', handleMove);
+                        document.addEventListener('mouseup', handleUp);
+                      }}
                     />
                   ) : (
                     <line
@@ -506,32 +558,89 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           el.style.strokeStyle === 'dotted' ? '2, 5' :
                             'none'
                       }
+                      style={{ pointerEvents: 'stroke' }}
                       markerStart={el.type === 'arrow' && el.style.arrowStart ? `url(#arrowhead-start-${el.id})` : undefined}
                       markerEnd={el.type === 'arrow' && el.style.arrowEnd ? `url(#arrowhead-end-${el.id})` : undefined}
+                      onClick={(e) => { e.stopPropagation(); selectElement(el.id); if (elementRefs.current[el.id]) { targetRef.current = elementRefs.current[el.id]; } }}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        selectElement(el.id);
+                        if (elementRefs.current[el.id]) { targetRef.current = elementRefs.current[el.id]; }
+                        const startClientX = e.clientX;
+                        const startClientY = e.clientY;
+                        const origStart = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
+                        const origEnd = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
+
+                        const handleMove = (ev: MouseEvent) => {
+                          const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
+                          if (!canvas) return;
+                          const rect = canvas.getBoundingClientRect();
+                          const dx = (ev.clientX - startClientX) / scale;
+                          const dy = (ev.clientY - startClientY) / scale;
+
+                          const newStart = { x: origStart.x + dx, y: origStart.y + dy };
+                          const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
+
+                          const minX = Math.min(newStart.x, newEnd.x);
+                          const minY = Math.min(newStart.y, newEnd.y);
+                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
+                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
+                          const strokeWidth = el.style?.borderWidth ?? 1;
+                          const sloppiness = el.style?.sloppiness ?? 0;
+                          const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2);
+                          const newX = minX - strokePadding;
+                          const newY = minY - strokePadding;
+                          const newWidth = rawWidth + strokePadding * 2;
+                          const newHeight = rawHeight + strokePadding * 2;
+
+                          updateLayer(pageIndex, el.id, {
+                            x: newX,
+                            y: newY,
+                            width: newWidth,
+                            height: newHeight,
+                            style: { ...el.style, start: newStart, end: newEnd }
+                          });
+                        };
+
+                        const handleUp = () => {
+                          document.removeEventListener('mousemove', handleMove);
+                          document.removeEventListener('mouseup', handleUp);
+                        };
+
+                        document.addEventListener('mousemove', handleMove);
+                        document.addEventListener('mouseup', handleUp);
+                      }}
                     />
                   )}
                 </svg>
                 {/* Endpoint handles when selected */}
                 {isSelected && (
                   <>
-                    {/* Center handle - for moving line/arrow OR controlling curve when sloppiness > 0 */}
+                    {/* Center handle - for moving line/arrow OR controlling curve */}
                     <div
                       style={{
                         position: 'absolute',
-                        left: Math.abs(sl) > 0.5 ? `${controlLocalX - 8}px` : `${((startLocalX + endLocalX) / 2) - 8}px`,
-                        top: Math.abs(sl) > 0.5 ? `${controlLocalY - 8}px` : `${((startLocalY + endLocalY) / 2) - 8}px`,
+                        left: Math.abs(sl) > 0.01 ? `${controlLocalX - 8}px` : `${((startLocalX + endLocalX) / 2) - 8}px`,
+                        top: Math.abs(sl) > 0.01 ? `${controlLocalY - 8}px` : `${((startLocalY + endLocalY) / 2) - 8}px`,
                         width: '16px',
                         height: '16px',
-                        backgroundColor: Math.abs(sl) > 0.5 ? '#10b981' : '#3b82f6',
+                        backgroundColor: Math.abs(sl) > 0.01 ? '#10b981' : '#3b82f6',
                         border: '2px solid white',
                         borderRadius: '4px',
-                        cursor: Math.abs(sl) > 0.5 ? 'grab' : 'move',
+                        cursor: 'grab',
                         pointerEvents: 'auto',
                         zIndex: 1001,
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
                         selectElement(el.id);
+                        // Click toggles a default sloppiness so users can quickly enable curve mode
+                        const currentSl = el.style?.sloppiness ?? 0;
+                        if (Math.abs(currentSl) < 0.5) {
+                          updateLayer(pageIndex, el.id, { style: { ...el.style, sloppiness: 30 } });
+                        } else {
+                          updateLayer(pageIndex, el.id, { style: { ...el.style, sloppiness: 0 } });
+                        }
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -542,6 +651,9 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         const origEnd = { ...endPoint };
                         const origSloppiness = el.style?.sloppiness ?? 0;
 
+                        // Mode detection: undecided at first, then switch to 'curve' or 'move' based on initial drag direction
+                        let mode: 'undetermined' | 'move' | 'curve' = 'undetermined';
+
                         const handleMove = (ev: MouseEvent) => {
                           const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
                           if (!canvas) return;
@@ -549,20 +661,34 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const mouseX = (ev.clientX - rect.left) / scale;
                           const mouseY = (ev.clientY - rect.top) / scale;
 
-                          // If sloppiness > 0.5, control the curve; otherwise, move the entire line
-                          if (Math.abs(origSloppiness) > 0.5) {
-                            // Curve control mode
-                            const start = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
-                            const end = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
-                            const dx = end.x - start.x;
-                            const dy = end.y - start.y;
-                            const len = Math.max(1, Math.hypot(dx, dy));
-                            const nx = -dy / len;
-                            const ny = dx / len;
-                            const midX = (start.x + end.x) / 2;
-                            const midY = (start.y + end.y) / 2;
+                          const relX = (ev.clientX - startClientX) / scale;
+                          const relY = (ev.clientY - startClientY) / scale;
 
-                            // Calculate perpendicular distance (can be positive or negative for bidirectional curve)
+                          // Determine tangent and normal
+                          const s = origStart;
+                          const ept = origEnd;
+                          const tx = ept.x - s.x;
+                          const ty = ept.y - s.y;
+                          const tlen = Math.max(1, Math.hypot(tx, ty));
+                          const ntx = tx / tlen;
+                          const nty = ty / tlen;
+                          const nx = -nty;
+                          const ny = ntx;
+
+                          // If mode is undecided, decide based on initial drag direction after small threshold
+                          if (mode === 'undetermined') {
+                            if (Math.hypot(relX, relY) < 2 / scale) {
+                              return; // wait for more movement
+                            }
+                            const projT = Math.abs(relX * ntx + relY * nty);
+                            const projN = Math.abs(relX * nx + relY * ny);
+                            mode = projN > projT ? 'curve' : 'move';
+                          }
+
+                          if (mode === 'curve') {
+                            // Curve control: set sloppiness based on perpendicular distance from midpoint
+                            const midX = (s.x + ept.x) / 2;
+                            const midY = (s.y + ept.y) / 2;
                             const dmx = mouseX - midX;
                             const dmy = mouseY - midY;
                             const newSloppiness = dmx * nx + dmy * ny;
@@ -584,8 +710,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
                             // Add padding for stroke and curve - ensure minimum padding
                             const strokeWidth = el.style?.borderWidth ?? 1;
-                            const sloppiness = el.style?.sloppiness ?? 0;
-                            const strokePadding = Math.max(10, strokeWidth * 2 + Math.abs(sloppiness) * 2);
+                            const strokePadding = Math.max(10, strokeWidth * 2);
                             const newX = minX - strokePadding;
                             const newY = minY - strokePadding;
                             const newWidth = rawWidth + strokePadding * 2;
@@ -696,11 +821,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
           // Only show 4 corner resize handles (no edge handles)
           renderDirections={['nw', 'ne', 'sw', 'se']}
-          
+
           // Square handles instead of circles
           className="moveable-control-box"
           controlPadding={0}
-          
+
           // Drag
           onDrag={({ target, left, top }) => {
             target.style.left = `${left}px`;

@@ -2,7 +2,7 @@
 
 import { useEditorStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Type, Square, Image as ImageIcon } from "lucide-react";
+import { Trash2, GripVertical, Type, Square, Image as ImageIcon, Circle, Minus, ArrowRight, PenLine } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -36,7 +36,20 @@ function SortableItem(props: { id: string; type: string; selected: boolean; onCl
     transition,
   };
 
-  const Icon = props.type === 'text' ? Type : props.type === 'image' ? ImageIcon : Square;
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'text': return Type;
+      case 'image': return ImageIcon;
+      case 'signature': return PenLine;
+      case 'rect': return Square;
+      case 'circle': return Circle;
+      case 'line': return Minus;
+      case 'arrow': return ArrowRight;
+      default: return Square;
+    }
+  };
+
+  const Icon = getIcon(props.type);
 
   return (
     <div ref={setNodeRef} style={style} className={cn(

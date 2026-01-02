@@ -16,7 +16,13 @@ import {
   AlignRight,
   Trash2,
   X,
-  Type
+  Type,
+  ImageIcon,
+  PenLine,
+  Square,
+  Circle,
+  Minus,
+  ArrowRight
 } from "lucide-react";
 import {
   Select,
@@ -90,6 +96,12 @@ export function PropertiesPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {element.type === 'text' && <Type className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'image' && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'signature' && <PenLine className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'rect' && <Square className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'circle' && <Circle className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'line' && <Minus className="h-4 w-4 text-muted-foreground" />}
+              {element.type === 'arrow' && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
               <h4 className="font-semibold text-sm capitalize">{element.type} Properties</h4>
             </div>
             <Button variant="ghost" size="icon-sm" onClick={() => selectElement(null)}>
@@ -562,9 +574,15 @@ export function PropertiesPanel() {
             <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">Curved Line</Label>
               <Switch
-                checked={(element.style.sloppiness ?? 0) > 0}
+                checked={Math.abs(element.style.sloppiness ?? 0) > 0}
                 onCheckedChange={(checked) => {
-                  handleStyleChange('sloppiness', checked ? 50 : 0);
+                  // If enabling, preserve direction if present, otherwise set a default positive curve
+                  if (checked) {
+                    const cur = element.style.sloppiness ?? 0;
+                    handleStyleChange('sloppiness', Math.abs(cur) > 0 ? cur : 50);
+                  } else {
+                    handleStyleChange('sloppiness', 0);
+                  }
                 }}
               />
             </div>
