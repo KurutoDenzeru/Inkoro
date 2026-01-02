@@ -15,7 +15,6 @@
 - **Export & Download:** Export full documents or single pages to PDF, PNG, JPEG, or WebP.
 - **Undo/Redo & Clipboard:** Undo/redo history, copy/paste annotations, and architecture to persist editor sessions via `localStorage`.
 - **Responsive & Accessible:** Mobile-first UI with keyboard shortcuts, accessible controls, and a compact toolbar for small screens.
-- **Open Source & Extensible:** MIT-licensed and built to be adapted to custom workflows.
 
 ---
 
@@ -26,7 +25,7 @@
 - [Shadcn UI / Radix UI](https://ui.shadcn.com/): Headless UI components and patterns.
 - [react-pdf](https://github.com/wojtekmaj/react-pdf) + [pdfjs-dist (pdf.js)](https://www.jsdelivr.com/package/npm/pdfjs-dist): PDF rendering within the browser.
 - [pdf-lib](https://github.com/Hopding/pdf-lib): Client-side PDF creation and modification.
-- [jszip](https://stuk.github.io/jszip/): Optional export utilities.
+- [Zustand](https://zustand.docs.pmnd.rs/): Minimal, fast, and scalable state management for React using simplified hooks.
 
 ---
 
@@ -66,7 +65,7 @@ yarn dev
 bun run dev
 ```
 
-Open [http://localhost:5713](http://localhost:5713) to view the app.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ---
 
@@ -81,16 +80,37 @@ npm start
 
 ## ⚙️ Configuration
 
-The editor is componentized under `src/components`. Key areas to customize are:
 
-- `src/components/pdf-editor.tsx`: Editor entrypoint and application state (annotations, undo/redo, session management).
-- `src/components/pdf-canvas.tsx`: Renders pages and annotations and handles canvas interactions.
-- `src/components/pdf-toolbar.tsx`: Tool selection (pen/text/shapes/highlight) and formatting controls.
-- `src/components/pdf-sidebar.tsx`: Thumbnails, layers view, and annotation management.
-- `src/components/pdf-navbar.tsx`: Top bar controls, export, and file handling actions.
-- `src/components/pdf-upload-zone.tsx`: Drag & drop / file input for loading PDFs.
-- `src/components/signature-dialog.tsx`: Signature creation and insertion.
-- `src/components/export-dialog.tsx`: Controls export formats and scope.
+Project folder structure (important files):
+
+```text
+app/
+	layout.tsx                 # Root layout and metadata
+	page.tsx                   # Main app entry
+	globals.css                # Global styles
+components/
+	providers.tsx              # Context providers
+	editor/
+		editor-layout.tsx      # Editor layout
+		canvas-layer.tsx       # PDF canvas and annotation layer
+		layer-list.tsx         # Layer management UI
+		toolbar.tsx            # Annotation and tool controls
+		thumbnail-list.tsx     # Page thumbnails and reordering
+		properties-panel.tsx   # Annotation properties panel
+		pdf-viewer.tsx         # PDF rendering
+		upload-dialog.tsx      # PDF upload dialog
+		download-dialog.tsx    # Export/download dialog
+		signature-dialog.tsx   # Signature creation dialog
+		image-dialog.tsx       # Image annotation dialog
+hooks/
+	use-dialogs.ts             # Dialog state management
+	use-mobile.tsx             # Mobile detection hook
+lib/
+	pdf-setup.ts               # PDF.js setup
+	pdf-utils.ts               # PDF utility functions
+	store.ts                   # Zustand store (app state)
+	utils.ts                   # General utilities
+```
 
 ## Contributing
 
