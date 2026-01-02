@@ -7,9 +7,8 @@ export async function savePdf(opts?: {
   author?: string;
   subject?: string;
   keywords?: string[];
-  showInWindowTitleBar?: boolean;
-  fastWebView?: boolean;
-}) {
+  returnBytes?: boolean;
+}): Promise<void | Uint8Array> {
   const { pdfFile, layers, pageDimensions } = useEditorStore.getState();
   if (!pdfFile) return;
 
@@ -19,7 +18,7 @@ export async function savePdf(opts?: {
 
     // Apply metadata (if provided)
     if (opts?.title) {
-      pdfDoc.setTitle(opts.title, { showInWindowTitleBar: !!opts.showInWindowTitleBar });
+      pdfDoc.setTitle(opts.title);
     }
     if (opts?.author) {
       pdfDoc.setAuthor(opts.author);
@@ -30,11 +29,7 @@ export async function savePdf(opts?: {
     if (opts?.keywords && opts.keywords.length > 0) {
       pdfDoc.setKeywords(opts.keywords);
     }
-    if (opts?.fastWebView) {
-      // True linearization (Fast Web View) requires special rewriting of the PDF and is not supported by pdf-lib in-browser.
-      // We surface a warning here; the option will not actually linearize the file.
-      console.warn('Fast Web View (linearization) requested but is not supported client-side.');
-    }
+
 
     const pages = pdfDoc.getPages();
 
@@ -218,9 +213,13 @@ export async function savePdf(opts?: {
 
     const pdfBytes = await pdfDoc.save();
 
-    // Trigger download
     // Ensure we use a standard ArrayBuffer-backed Uint8Array (avoids SharedArrayBuffer typing issues)
     const uint8Array = new Uint8Array(pdfBytes);
+
+    if (opts?.returnBytes) {
+      return uint8Array;
+    }
+
     const blob = new Blob([uint8Array], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
