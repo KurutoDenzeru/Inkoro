@@ -40,6 +40,41 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     }
   }, [selectedElementId, elements]);
 
+  // Listen for focus requests from the sidebar so a single click on a layer will bring the element into view
+  useEffect(() => {
+    const handleFocusEvent = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail as { id?: string } | undefined;
+      const id = detail?.id;
+      if (!id) return;
+
+      const elRef = elementRefs.current[id];
+      if (elRef) {
+        try {
+          elRef.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        } catch (err) {
+          // ignore
+        }
+
+        // If already selected, ensure bounding box gets attached
+        if (selectedElementId === id) {
+          targetRef.current = elRef;
+        } else {
+          // Select and let the selection effect attach the targetRef
+          useEditorStore.getState().selectElement(id);
+          // set a short timeout to allow DOM updates and then attach the target
+          setTimeout(() => {
+            if (elementRefs.current[id]) {
+              targetRef.current = elementRefs.current[id]!
+            }
+          }, 40);
+        }
+      }
+    };
+
+    window.addEventListener('inkoro-focus-element', handleFocusEvent as EventListener);
+    return () => window.removeEventListener('inkoro-focus-element', handleFocusEvent as EventListener);
+  }, [selectedElementId]);
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     // Clicking on empty space should deselect any selected element
     selectElement(null);

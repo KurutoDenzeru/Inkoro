@@ -229,6 +229,10 @@ function Sidebar({
         data-slot="sidebar-gap"
         className={cn(
           "transition-[width] duration-200 ease-linear relative w-(--sidebar-width) bg-transparent",
+          // Animate when expanding/collapsing for a smoother UX
+          "data-[state=expanded]:animate-in data-[state=collapsed]:animate-out data-[state=expanded]:slide-in-from-left-10 data-[state=collapsed]:slide-out-to-left-10",
+          // Right-side variants
+          "group-data-[side=right]:data-[state=expanded]:slide-in-from-right-10 group-data-[side=right]:data-[state=collapsed]:slide-out-to-right-10",
           "group-data-[collapsible=offExamples]:w-0",
           "group-data-[side=right]:rotate-180",
           "group-data-[collapsible=icon]:hidden",
@@ -240,7 +244,10 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex group-data-[collapsible=icon]:hidden",
+          // Slide/animate the container on expand/collapse for a nicer visual.
+          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width,transform,opacity] duration-200 ease-linear md:flex group-data-[collapsible=icon]:hidden",
+          "data-[state=expanded]:animate-in data-[state=collapsed]:animate-out data-[state=expanded]:slide-in-from-left-10 data-[state=collapsed]:slide-out-to-left-10 data-[state=expanded]:fade-in data-[state=collapsed]:fade-out",
+          "group-data-[side=right]:data-[state=expanded]:slide-in-from-right-10 group-data-[side=right]:data-[state=collapsed]:slide-out-to-right-10",
           side === "left"
             ? "left-0 group-data-[collapsible=offExamples]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offExamples]:right-[calc(var(--sidebar-width)*-1)]",

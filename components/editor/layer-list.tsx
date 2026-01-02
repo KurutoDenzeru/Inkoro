@@ -22,7 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from "@/lib/utils";
 
-function SortableItem(props: { id: string; type: string; selected: boolean; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
+function SortableItem(props: { id: string; type: string; label?: string; selected: boolean; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
   const {
     attributes,
     listeners,
@@ -51,17 +51,28 @@ function SortableItem(props: { id: string; type: string; selected: boolean; onCl
 
   const Icon = getIcon(props.type);
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Select the layer and notify the canvas to focus the element
+    props.onClick();
+    // Dispatch a custom event so CanvasLayer can scroll into view and ensure the bounding box is activated
+    try {
+      window.dispatchEvent(new CustomEvent('inkoro-focus-element', { detail: { id: props.id } }));
+    } catch (err) {
+      // ignore
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style} className={cn(
-      "flex items-center gap-2 p-2 rounded-md mb-2 bg-card border",
+      "flex items-center gap-2 p-2 rounded-md mb-2 bg-card border min-w-0",
       props.selected ? "border-primary bg-primary/5" : "hover:bg-accent"
     )}>
       <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
         <GripVertical className="h-4 w-4" />
       </div>
-      <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={props.onClick}>
+      <div className="flex-1 flex items-center gap-2 cursor-pointer min-w-0" onClick={handleClick}>
         <Icon className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium capitalize">{props.type}</span>
+        <span className="text-sm font-medium truncate" title={props.label || props.type}>{props.label ?? props.type}</span>
       </div>
       <Button variant="ghost" size="icon-sm" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={props.onDelete}>
         <Trash2 className="h-3 w-3" />
@@ -106,22 +117,26 @@ export function LayerList() {
         items={elements.map(e => e.id)}
         strategy={verticalListSortingStrategy}
       >
-        {elements.slice().reverse().map((el) => ( // Reverse because Canvas renders bottom-up (first is back), Layers usually show Top first.
-          // Wait, drag and drop usually implies visual order. 
-          // If we reverse for display, we must handle indices carefully.
-          // Let's keep it 1:1 for now to avoid confusion. First in array = Bottom layer.
-          // So default map is fine (Top of list = Bottom layer). 
-          // Usually Layers panel shows Top Layer at the TOP. 
-          // So we SHOULD reverse.
-          <SortableItem
-            key={el.id}
-            id={el.id}
-            type={el.type}
-            selected={el.id === selectedElementId}
-            onClick={() => selectElement(el.id)}
-            onDelete={(e) => { e.stopPropagation(); removeLayer(currentPage, el.id); }}
-          />
-        ))}
+        {elements.slice().reverse().map((el) => {
+          const label = el.type === 'text' ? (el.content ? String(el.content).split('\n')[0] : 'Text') : el.type === 'image' ? 'Image' : el.type;
+          return (
+            <SortableItem
+              key={el.id}
+              id={el.id}
+              type={el.type}
+              label={label}
+              selected={el.id === selectedElementId}
+              onClick={() => {
+                selectElement(el.id);
+                // Ensure select tool is active so bounding box shows and users can manipulate
+                useEditorStore.getState().setActiveTool('select');
+                // Also dispatch the focus event for canvas
+                try { window.dispatchEvent(new CustomEvent('inkoro-focus-element', { detail: { id: el.id } })); } catch (err) {}
+              }}
+              onDelete={(e) => { e.stopPropagation(); removeLayer(currentPage, el.id); }}
+            />
+          );
+        })}
       </SortableContext>
     </DndContext>
   );
