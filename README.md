@@ -20,7 +20,7 @@
 
 ## 🛠️ Tech Stack
 
-- [Vite](https://vitejs.dev/) + React + TypeScript: Fast development with modern tooling.
+- [Next.js](https://nextjs.org/) + React + TypeScript: Fast development with modern tooling.
 - [Tailwind CSS](https://tailwindcss.com/): Utility-first CSS framework used for styling.
 - [Shadcn UI / Radix UI](https://ui.shadcn.com/): Headless UI components and patterns.
 - [react-pdf](https://github.com/wojtekmaj/react-pdf) + [pdfjs-dist (pdf.js)](https://www.jsdelivr.com/package/npm/pdfjs-dist): PDF rendering within the browser.
@@ -80,8 +80,7 @@ npm start
 
 ## ⚙️ Configuration
 
-
-Project folder structure (important files):
+The editor is componentized under `src/components`. Key areas to customize are:
 
 ```text
 app/

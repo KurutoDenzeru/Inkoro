@@ -57,7 +57,7 @@ export function AboutDialog() {
             <h3 className="font-semibold mb-2 text-base">Connect</h3>
             <div className="flex gap-3">
               <a
-                href="https://github.com/KurutoDenzeru/ChainPaper"
+                href="https://github.com/KurutoDenzeru/Inkoro"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
