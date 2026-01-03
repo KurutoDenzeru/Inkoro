@@ -45,8 +45,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 ## 📦 Build for Production
 
 ```bash
-npm run build
-npm start
+bun run build
+bun start
 ```
 
 ## 🗂️ Configuration
