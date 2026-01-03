@@ -4,7 +4,9 @@
 
 🪶 Lightweight React + TypeScript PDF editor built with Vite, react-pdf (pdf.js), Tailwind CSS, and shadcn/ui; ideal for responsive and fast PDF workflows.
 
----
+## ☁️ Deploy your own
+
+[![Deploy with Vercel](_deploy_vercel.svg)](https://vercel.com/new/clone?repository-url=https://github.com/KurutoDenzeru/Inkoro)  [![Deploy with Netlify](_deploy_netlify.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/KurutoDenzeru/Inkoro)
 
 ## ✨ Features
 
@@ -16,9 +18,7 @@
 - **Undo/Redo & Clipboard:** Undo/redo history, copy/paste annotations, and architecture to persist editor sessions via `localStorage`.
 - **Responsive & Accessible:** Mobile-first UI with keyboard shortcuts, accessible controls, and a compact toolbar for small screens.
 
----
-
-## 🛠️ Tech Stack
+## 🧱 Tech Stack
 
 - [Next.js](https://nextjs.org/) + React + TypeScript: Fast development with modern tooling.
 - [Tailwind CSS](https://tailwindcss.com/): Utility-first CSS framework used for styling.
@@ -27,15 +27,8 @@
 - [pdf-lib](https://github.com/Hopding/pdf-lib): Client-side PDF creation and modification.
 - [Zustand](https://zustand.docs.pmnd.rs/): Minimal, fast, and scalable state management for React using simplified hooks.
 
----
 
-## 🚀 Deploy your own
-
-[![Deploy with Vercel](_deploy_vercel.svg)](https://vercel.com/new/clone?repository-url=https://github.com/KurutoDenzeru/Inkoro)  [![Deploy with Netlify](_deploy_netlify.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/KurutoDenzeru/Inkoro)
-
----
-
-## 🚀 Getting Started
+## ⚡ Getting Started
 
 ### 1. Clone the repository
 
@@ -67,7 +60,6 @@ bun run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
----
 
 ## 📦 Build for Production
 
@@ -76,9 +68,7 @@ npm run build
 npm start
 ```
 
----
-
-## ⚙️ Configuration
+## 🗂️ Configuration
 
 The editor is componentized under `src/components`. Key areas to customize are:
 
@@ -86,7 +76,6 @@ The editor is componentized under `src/components`. Key areas to customize are:
 app/
 	layout.tsx                 # Root layout and metadata
 	page.tsx                   # Main app entry
-	globals.css                # Global styles
 components/
 	providers.tsx              # Context providers
 	editor/
@@ -111,7 +100,7 @@ lib/
 	utils.ts                   # General utilities
 ```
 
-## Contributing
+## 🤝🏻 Contributing
 
 Contributions are always welcome!
 
@@ -119,6 +108,6 @@ See `Contributing.md` for ways to get started.
 
 <!-- Please adhere to this project's `Code of Conduct`. -->
 
-## 📄 License
+## ⚖️ License
 
-[MIT](LICENSE)
+MIT License - see the [MIT](LICENSE) file for details.
