@@ -103,7 +103,14 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       <Tooltip>
         <DropdownMenuItem nativeButton render={<TooltipTrigger />} onClick={() => {
           if (confirm('Start a new session? This will clear everything.')) {
-            window.location.reload();
+            // Clear persisted session and the loaded PDF so the Upload dialog appears
+            try {
+              useEditorStore.getState().clearSession();
+              useEditorStore.setState({ pdfFile: null, pdfUrl: null, layers: {}, selectedElementId: null, numPages: 0, currentPage: 1 });
+            } catch (e) {
+              // As a fallback, do a hard reload if store clearing fails
+              window.location.reload();
+            }
           }
         }}>
           <RefreshCw className="h-4 w-4 mr-2" />
