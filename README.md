@@ -2,7 +2,7 @@
 
 # 🪶 Inkoro - PDF Editor & Annotator
 
-🪶 Lightweight React + TypeScript PDF editor built with Vite, react-pdf (pdf.js), Tailwind CSS, and shadcn/ui; ideal for responsive and fast PDF workflows.
+🪶 Lightweight React + TypeScript PDF editor built with Next.js, react-pdf (pdf.js), pdf-lib, Tailwind, shadcn/ui, Zustand, dnd-kit, html2canvas, and react-moveable.
 
 ## ☁️ Deploy your own
 
