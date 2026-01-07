@@ -45,7 +45,7 @@ export function AboutDialog() {
           <div>
             <h3 className="font-semibold mb-2 text-base">Tech Stack</h3>
             <div className="flex flex-wrap gap-2">
-              {['Next.js', 'React', 'TypeScript', 'Tailwind', 'pdf-lib', 'react-pdf', 'Zustand', 'Shadcn UI'].map((tech) => (
+              {['Next.js', 'React', 'TypeScript', 'Tailwind', 'pdf-lib', 'react-pdf', 'Zustand', 'shadcn/ui'].map((tech) => (
                 <span key={tech} className="px-2 py-1 bg-muted rounded-none text-xs">
                   {tech}
                 </span>

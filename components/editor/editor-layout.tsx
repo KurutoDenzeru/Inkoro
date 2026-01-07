@@ -102,7 +102,7 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
   const redoKeys = isMac ? ['⌘', 'Shift', 'Z'] : ['Ctrl', 'Y'];
 
   return (
-    <DropdownMenuContent align="start">
+    <DropdownMenuContent align="start" className="min-w-64 w-72 max-w-[90vw]">
       <DropdownMenuGroup>
         <DropdownMenuLabel>File</DropdownMenuLabel>
       </DropdownMenuGroup>
