@@ -330,6 +330,22 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       return null;
     };
 
+    const tryParseInkoroHtml = (html: string) => {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const node = doc.querySelector('[data-inkoro]');
+        const payload = node?.getAttribute('data-inkoro');
+        if (!payload) return null;
+        const decoded = decodeURIComponent(payload);
+        const parsed = JSON.parse(decoded);
+        if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) return parsed.elements as PDFElement[];
+      } catch (err) {
+        // ignore
+      }
+      return null;
+    };
+
     const handlePaste = async (e: Event) => {
       const cbEvent = e as ClipboardEvent;
       if (!cbEvent.clipboardData) return;
@@ -364,9 +380,26 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         }
       }
 
-      // HTML content - try to extract image src's
+      // HTML content - try to extract Inkoro payload first
       const html = cbEvent.clipboardData.getData('text/html');
       if (html) {
+        const inkElements = tryParseInkoroHtml(html);
+        if (inkElements) {
+          const offset = 10;
+          let lastId: string | null = null;
+          for (const el of inkElements) {
+            const clone: PDFElement = JSON.parse(JSON.stringify(el));
+            clone.id = crypto.randomUUID();
+            clone.x = (clone.x ?? 100) + offset;
+            clone.y = (clone.y ?? 100) + offset;
+            addLayer(pageIndex, clone);
+            lastId = clone.id;
+          }
+          if (lastId) selectElement(lastId);
+          return;
+        }
+
+        // HTML content - try to extract image src's
         try {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
