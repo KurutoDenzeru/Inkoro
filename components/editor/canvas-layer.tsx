@@ -194,6 +194,22 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
       if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
 
+      // Undo/Redo shortcuts
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        useEditorStore.getState().undo();
+        return;
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey)
+        && (e.key === 'y' || e.key === 'Y' || ((e.key === 'z' || e.key === 'Z') && e.shiftKey))
+      ) {
+        e.preventDefault();
+        useEditorStore.getState().redo();
+        return;
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (layers[pageIndex]?.find(el => el.id === selectedElementId)) {
           useEditorStore.getState().removeLayer(pageIndex, selectedElementId);
