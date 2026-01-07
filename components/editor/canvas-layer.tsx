@@ -179,6 +179,44 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
+      if (isEditing) return; // Don't delete if editing text
+
+      // Don't intercept when typing in inputs or textareas
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
+
+      // Undo/Redo shortcuts
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        useEditorStore.getState().undo();
+        return;
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey)
+        && (e.key === 'y' || e.key === 'Y' || ((e.key === 'z' || e.key === 'Z') && e.shiftKey))
+      ) {
+        e.preventDefault();
+        useEditorStore.getState().redo();
+        return;
+      }
+
+      // Zoom shortcuts
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        const { scale: currentScale, setScale } = useEditorStore.getState();
+        setScale(Math.min(currentScale + 0.1, 3));
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && (e.key === '-' || e.key === '_')) {
+        e.preventDefault();
+        const { scale: currentScale, setScale } = useEditorStore.getState();
+        setScale(Math.max(currentScale - 0.1, 0.5));
+        return;
+      }
+
       if (!selectedElementId) {
         // Allow paste via keydown to fallback for some environments
         if ((e.metaKey || e.ctrlKey) && (e.key === 'v' || e.key === 'V')) {
@@ -186,13 +224,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         }
         return;
       }
-
-      if (isEditing) return; // Don't delete if editing text
-
-      // Don't intercept when typing in inputs or textareas
-      const activeTag = document.activeElement?.tagName.toLowerCase();
-      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
-      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (layers[pageIndex]?.find(el => el.id === selectedElementId)) {

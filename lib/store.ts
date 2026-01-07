@@ -39,6 +39,14 @@ export interface PDFElement {
   };
 }
 
+type HistorySnapshot = {
+  layers: Record<number, PDFElement[]>;
+  selectedElementId: string | null;
+  currentPage: number;
+};
+
+const HISTORY_LIMIT = 50;
+
 const buildInkoroClipboardPayload = (elements: PDFElement[]) =>
   JSON.stringify({ __inkoro: true, elements });
 
@@ -72,6 +80,7 @@ interface EditorState {
   selectedElementId: string | null;
   activeTool: 'select' | 'text' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'signature' | 'draw' | null;
   clipboard: ClipboardData;
+  history: { past: HistorySnapshot[]; future: HistorySnapshot[] };
   isHydrating: boolean; // track whether initial hydration is in progress
 
   // session helpers
@@ -97,11 +106,35 @@ interface EditorState {
   copySelection: () => Promise<boolean>;
   pasteClipboard: (page: number, x?: number, y?: number) => Promise<boolean>;
   clearClipboard: () => void;
+
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => {
   let currentPdfObjectUrl: string | null = null;
   const PDF_PERSIST_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB max to keep localStorage safe
+  let isHistoryApplying = false;
+
+  const cloneLayers = (layers: Record<number, PDFElement[]>) =>
+    JSON.parse(JSON.stringify(layers)) as Record<number, PDFElement[]>;
+
+  const captureSnapshot = (): HistorySnapshot => ({
+    layers: cloneLayers(get().layers),
+    selectedElementId: get().selectedElementId,
+    currentPage: get().currentPage,
+  });
+
+  const recordHistory = () => {
+    if (isHistoryApplying) return;
+    const snapshot = captureSnapshot();
+    set((state) => ({
+      history: {
+        past: [...state.history.past, snapshot].slice(-HISTORY_LIMIT),
+        future: [],
+      },
+    }));
+  };
 
   return {
     pdfFile: null,
@@ -114,6 +147,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     selectedElementId: null,
     activeTool: 'select',
     clipboard: null,
+    history: { past: [], future: [] },
     isHydrating: typeof window !== 'undefined', // true on client during initial load
 
     exportSession: () => {
@@ -147,6 +181,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
           pageDimensions: typeof data.pageDimensions === 'object' ? data.pageDimensions : state.pageDimensions,
           layers: typeof data.layers === 'object' ? data.layers : state.layers,
           activeTool: typeof data.activeTool === 'string' ? data.activeTool : state.activeTool,
+          history: { past: [], future: [] },
         }));
       } catch (err) {
         console.warn('Failed to import session:', err);
@@ -167,6 +202,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         pageDimensions: {},
         layers: {},
         activeTool: 'select',
+        history: { past: [], future: [] },
       });
     },
 
@@ -222,41 +258,53 @@ export const useEditorStore = create<EditorState>((set, get) => {
       },
     })),
 
-    addLayer: (page, layer) => set((state) => ({
-      layers: {
-        ...state.layers,
-        [page]: [...(state.layers[page] || []), layer],
-      },
-    })),
+    addLayer: (page, layer) => {
+      recordHistory();
+      set((state) => ({
+        layers: {
+          ...state.layers,
+          [page]: [...(state.layers[page] || []), layer],
+        },
+      }));
+    },
 
-    updateLayer: (page, id, updates) => set((state) => ({
-      layers: {
-        ...state.layers,
-        [page]: (state.layers[page] || []).map((l) =>
-          l.id === id
-            ? {
-              ...l,
-              ...updates,
-              style: updates.style ? { ...l.style, ...updates.style } : l.style,
-            }
-            : l
-        ),
-      },
-    })),
+    updateLayer: (page, id, updates) => {
+      recordHistory();
+      set((state) => ({
+        layers: {
+          ...state.layers,
+          [page]: (state.layers[page] || []).map((l) =>
+            l.id === id
+              ? {
+                ...l,
+                ...updates,
+                style: updates.style ? { ...l.style, ...updates.style } : l.style,
+              }
+              : l
+          ),
+        },
+      }));
+    },
 
-    removeLayer: (page, id) => set((state) => ({
-      layers: {
-        ...state.layers,
-        [page]: (state.layers[page] || []).filter((l) => l.id !== id),
-      },
-    })),
+    removeLayer: (page, id) => {
+      recordHistory();
+      set((state) => ({
+        layers: {
+          ...state.layers,
+          [page]: (state.layers[page] || []).filter((l) => l.id !== id),
+        },
+      }));
+    },
 
-    reorderLayers: (page, newLayers) => set((state) => ({
-      layers: {
-        ...state.layers,
-        [page]: newLayers,
-      },
-    })),
+    reorderLayers: (page, newLayers) => {
+      recordHistory();
+      set((state) => ({
+        layers: {
+          ...state.layers,
+          [page]: newLayers,
+        },
+      }));
+    },
 
     selectElement: (id) => set({ selectedElementId: id }),
     setActiveTool: (tool) => set({ activeTool: tool }),
@@ -373,6 +421,42 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     clearClipboard: () => set({ clipboard: null }),
+
+    undo: () => {
+      const state = get();
+      if (state.history.past.length === 0) return;
+      const previous = state.history.past[state.history.past.length - 1];
+      const current = captureSnapshot();
+      isHistoryApplying = true;
+      set((s) => ({
+        layers: cloneLayers(previous.layers),
+        selectedElementId: previous.selectedElementId,
+        currentPage: previous.currentPage,
+        history: {
+          past: s.history.past.slice(0, -1),
+          future: [current, ...s.history.future].slice(0, HISTORY_LIMIT),
+        },
+      }));
+      isHistoryApplying = false;
+    },
+
+    redo: () => {
+      const state = get();
+      if (state.history.future.length === 0) return;
+      const next = state.history.future[0];
+      const current = captureSnapshot();
+      isHistoryApplying = true;
+      set((s) => ({
+        layers: cloneLayers(next.layers),
+        selectedElementId: next.selectedElementId,
+        currentPage: next.currentPage,
+        history: {
+          past: [...s.history.past, current].slice(-HISTORY_LIMIT),
+          future: s.history.future.slice(1),
+        },
+      }));
+      isHistoryApplying = false;
+    },
   };
 });
 
@@ -445,6 +529,3 @@ if (typeof window !== 'undefined') {
     (window as any).__inkoro_store_subscribed = true;
   }
 }
-
-
-

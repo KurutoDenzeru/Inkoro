@@ -22,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { PanelLeftIcon } from "lucide-react"
 
@@ -278,9 +279,20 @@ function SidebarTrigger({
   ...props
 }: useRender.ComponentProps<"button"> & React.ComponentProps<"button"> & { tooltip?: string | React.ComponentProps<typeof TooltipContent> }) {
   const { toggleSidebar, state, isMobile } = useSidebar()
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+  const modKey = isMac ? "⌘" : "Ctrl"
 
   // provide a sensible default tooltip if none was passed
-  const effectiveTooltip = tooltip ?? (state === "expanded" ? "Collapse Sidebar" : "Expand Sidebar")
+  const defaultTooltip = (
+    <div className="flex items-center gap-2">
+      <span>{state === "expanded" ? "Collapse Sidebar" : "Expand Sidebar"}</span>
+      <KbdGroup>
+        <Kbd>{modKey}</Kbd>
+        <Kbd>{SIDEBAR_KEYBOARD_SHORTCUT.toUpperCase()}</Kbd>
+      </KbdGroup>
+    </div>
+  )
+  const effectiveTooltip = tooltip ?? { children: defaultTooltip }
 
   const comp = useRender({
     defaultTagName: "button",

@@ -3,7 +3,7 @@
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadDialog } from "./upload-dialog";
-import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, Info, Sun, Moon, Monitor } from "lucide-react";
+import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, Info, Sun, Moon, Monitor, Copy, Clipboard, ZoomIn, ZoomOut } from "lucide-react";
 import { useEditorStore } from "@/lib/store";
 import { LayerList } from "./layer-list";
 import { ThumbnailList } from "./thumbnail-list";
@@ -24,13 +24,14 @@ import {
   DropdownMenuGroup,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DownloadDialog } from "./download-dialog";
 import { AboutDialog } from "@/components/ui/about-dialog";
 import { useDialogStore } from "@/hooks/use-dialogs";
@@ -38,6 +39,8 @@ import { useTheme } from "next-themes";
 
 function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen: (open: boolean) => void }) {
   const { state, toggleSidebar } = useSidebar();
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const modKey = isMac ? '⌘' : 'Ctrl';
 
   if (state === "expanded") return null;
 
@@ -58,7 +61,15 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
           >
             <PanelLeftOpen className="h-4 w-4" />
           </TooltipTrigger>
-          <TooltipContent>Expand Sidebar</TooltipContent>
+          <TooltipContent>
+            <div className="flex items-center gap-2">
+              <span>Expand Sidebar</span>
+              <KbdGroup>
+                <Kbd>{modKey}</Kbd>
+                <Kbd>B</Kbd>
+              </KbdGroup>
+            </div>
+          </TooltipContent>
         </Tooltip>
 
         <div className="h-6 w-px bg-border" />
@@ -83,11 +94,17 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
 
 function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
   const { isMobile } = useSidebar();
+  const { currentPage, history, undo, redo, scale, setScale } = useEditorStore();
   const setAboutOpen = useDialogStore((s) => s.setAboutOpen);
   const { setTheme } = useTheme();
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const modKey = isMac ? '⌘' : 'Ctrl';
+  const redoKeys = isMac ? ['⌘', 'Shift', 'Z'] : ['Ctrl', 'Y'];
+  const handleZoomIn = () => setScale(Math.min(scale + 0.1, 3));
+  const handleZoomOut = () => setScale(Math.max(scale - 0.1, 0.5));
 
   return (
-    <DropdownMenuContent align="start">
+    <DropdownMenuContent align="start" className="min-w-64 w-72 max-w-[90vw]">
       <DropdownMenuGroup>
         <DropdownMenuLabel>File</DropdownMenuLabel>
       </DropdownMenuGroup>
@@ -137,25 +154,112 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </DropdownMenuGroup>
 
       <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} disabled>
+        <DropdownMenuItem
+          render={<TooltipTrigger />}
+          disabled={history.past.length === 0}
+          onClick={() => undo()}
+        >
           <Undo className="h-4 w-4 mr-2" />
           Undo
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>Z</Kbd>
+          </KbdGroup>
         </DropdownMenuItem>
         <TooltipContent hidden={isMobile}>Undo</TooltipContent>
       </Tooltip>
 
       <Tooltip>
-        <DropdownMenuItem render={<TooltipTrigger />} disabled>
+        <DropdownMenuItem
+          render={<TooltipTrigger />}
+          disabled={history.future.length === 0}
+          onClick={() => redo()}
+        >
           <Redo className="h-4 w-4 mr-2" />
           Redo
+          <KbdGroup className="ml-auto">
+            {redoKeys.map((key) => (
+              <Kbd key={key}>{key}</Kbd>
+            ))}
+          </KbdGroup>
         </DropdownMenuItem>
         <TooltipContent hidden={isMobile}>Redo</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <DropdownMenuItem
+          render={<TooltipTrigger />}
+          onClick={async () => {
+            const ok = await useEditorStore.getState().copySelection();
+            try {
+              const { toast } = await import('sonner');
+              toast(ok ? 'Copied to clipboard' : 'Nothing selected');
+            } catch (err) {
+              // ignore
+            }
+          }}
+        >
+          <Copy className="h-4 w-4 mr-2" />
+          Copy
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>C</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Copy</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <DropdownMenuItem
+          render={<TooltipTrigger />}
+          onClick={async () => {
+            const ok = await useEditorStore.getState().pasteClipboard(currentPage);
+            try {
+              const { toast } = await import('sonner');
+              toast(ok ? 'Pasted' : 'Nothing to paste');
+            } catch (err) {
+              // ignore
+            }
+          }}
+        >
+          <Clipboard className="h-4 w-4 mr-2" />
+          Paste
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>V</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Paste</TooltipContent>
       </Tooltip>
 
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuLabel>View</DropdownMenuLabel>
       </DropdownMenuGroup>
+
+      <Tooltip>
+        <DropdownMenuItem render={<TooltipTrigger />} onClick={handleZoomIn}>
+          <ZoomIn className="h-4 w-4 mr-2" />
+          Zoom In
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>+</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Zoom In</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <DropdownMenuItem render={<TooltipTrigger />} onClick={handleZoomOut}>
+          <ZoomOut className="h-4 w-4 mr-2" />
+          Zoom Out
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>-</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Zoom Out</TooltipContent>
+      </Tooltip>
 
       <DropdownMenuSub>
         <Tooltip>
@@ -203,6 +307,28 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       </Tooltip>
     </DropdownMenuContent>
   );
+}
+
+function SidebarShortcutListener() {
+  const { toggleSidebar } = useSidebar();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
+
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleSidebar]);
+
+  return null;
 }
 
 export function EditorLayout() {
@@ -295,6 +421,7 @@ export function EditorLayout() {
           </div>
 
           <SidebarToggleButton setDownloadDialogOpen={setDownloadDialogOpen} />
+          <SidebarShortcutListener />
           <Toolbar />
           <PropertiesPanel />
           <UploadDialog />
