@@ -179,14 +179,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      if (!selectedElementId) {
-        // Allow paste via keydown to fallback for some environments
-        if ((e.metaKey || e.ctrlKey) && (e.key === 'v' || e.key === 'V')) {
-          // Let the paste event handle the content
-        }
-        return;
-      }
-
       if (isEditing) return; // Don't delete if editing text
 
       // Don't intercept when typing in inputs or textareas
@@ -207,6 +199,29 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       ) {
         e.preventDefault();
         useEditorStore.getState().redo();
+        return;
+      }
+
+      // Zoom shortcuts
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        const { scale: currentScale, setScale } = useEditorStore.getState();
+        setScale(Math.min(currentScale + 0.1, 3));
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && (e.key === '-' || e.key === '_')) {
+        e.preventDefault();
+        const { scale: currentScale, setScale } = useEditorStore.getState();
+        setScale(Math.max(currentScale - 0.1, 0.5));
+        return;
+      }
+
+      if (!selectedElementId) {
+        // Allow paste via keydown to fallback for some environments
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'v' || e.key === 'V')) {
+          // Let the paste event handle the content
+        }
         return;
       }
 

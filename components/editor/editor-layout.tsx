@@ -3,7 +3,7 @@
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadDialog } from "./upload-dialog";
-import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, Info, Sun, Moon, Monitor, Copy, Clipboard } from "lucide-react";
+import { Layers, FileText, PanelLeftOpen, Menu, Download, RefreshCw, Trash2, Undo, Redo, Info, Sun, Moon, Monitor, Copy, Clipboard, ZoomIn, ZoomOut } from "lucide-react";
 import { useEditorStore } from "@/lib/store";
 import { LayerList } from "./layer-list";
 import { ThumbnailList } from "./thumbnail-list";
@@ -94,12 +94,14 @@ function SidebarToggleButton({ setDownloadDialogOpen }: { setDownloadDialogOpen:
 
 function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
   const { isMobile } = useSidebar();
-  const { currentPage, history, undo, redo } = useEditorStore();
+  const { currentPage, history, undo, redo, scale, setScale } = useEditorStore();
   const setAboutOpen = useDialogStore((s) => s.setAboutOpen);
   const { setTheme } = useTheme();
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const modKey = isMac ? '⌘' : 'Ctrl';
   const redoKeys = isMac ? ['⌘', 'Shift', 'Z'] : ['Ctrl', 'Y'];
+  const handleZoomIn = () => setScale(Math.min(scale + 0.1, 3));
+  const handleZoomOut = () => setScale(Math.max(scale - 0.1, 0.5));
 
   return (
     <DropdownMenuContent align="start" className="min-w-64 w-72 max-w-[90vw]">
@@ -234,6 +236,30 @@ function SidebarMenuContent({ onDownload }: { onDownload: () => void }) {
       <DropdownMenuGroup>
         <DropdownMenuLabel>View</DropdownMenuLabel>
       </DropdownMenuGroup>
+
+      <Tooltip>
+        <DropdownMenuItem render={<TooltipTrigger />} onClick={handleZoomIn}>
+          <ZoomIn className="h-4 w-4 mr-2" />
+          Zoom In
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>+</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Zoom In</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <DropdownMenuItem render={<TooltipTrigger />} onClick={handleZoomOut}>
+          <ZoomOut className="h-4 w-4 mr-2" />
+          Zoom Out
+          <KbdGroup className="ml-auto">
+            <Kbd>{modKey}</Kbd>
+            <Kbd>-</Kbd>
+          </KbdGroup>
+        </DropdownMenuItem>
+        <TooltipContent hidden={isMobile}>Zoom Out</TooltipContent>
+      </Tooltip>
 
       <DropdownMenuSub>
         <Tooltip>
