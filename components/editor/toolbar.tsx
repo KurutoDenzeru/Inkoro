@@ -113,6 +113,32 @@ export function Toolbar() {
     reader.readAsDataURL(blob);
   });
 
+  const tryParseInkoroHtml = (html: string) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const node = doc.querySelector('[data-inkoro]');
+      const payload = node?.getAttribute('data-inkoro');
+      if (!payload) return null;
+      const decoded = decodeURIComponent(payload);
+      const parsed = JSON.parse(decoded);
+      if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) return parsed.elements;
+    } catch (err) {
+      // ignore
+    }
+    return null;
+  };
+
+  const getPlainTextFromHtml = (html: string) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      return doc.body?.textContent || '';
+    } catch (err) {
+      return html;
+    }
+  };
+
   const handlePasteClick = async () => {
     // Try advanced Clipboard API first (image support)
     try {
@@ -146,17 +172,18 @@ export function Toolbar() {
           }
 
           // fallback to text
-          const textType = item.types.find((t: string) => t === 'text/plain' || t === 'text/html');
+          const textHtmlType = item.types.find((t: string) => t === 'text/html');
+          const textPlainType = item.types.find((t: string) => t === 'text/plain');
+          const textType = textHtmlType || textPlainType;
           if (textType) {
             const blob = await item.getType(textType);
             const txt = await blob.text();
-            // try to parse Inkoro JSON
-            try {
-              const parsed = JSON.parse(txt);
-              if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) {
+            if (textType === 'text/html') {
+              const inkElements = tryParseInkoroHtml(txt);
+              if (inkElements) {
                 const offset = 10;
                 let lastId = null;
-                for (const el of parsed.elements) {
+                for (const el of inkElements) {
                   const clone = JSON.parse(JSON.stringify(el));
                   clone.id = crypto.randomUUID();
                   clone.x = (clone.x ?? 100) + offset;
@@ -168,8 +195,28 @@ export function Toolbar() {
                 try { const { toast } = await import('sonner'); toast('Pasted elements'); } catch (err) {}
                 return;
               }
-            } catch (err) {
-              // not JSON
+            } else {
+              // try to parse Inkoro JSON
+              try {
+                const parsed = JSON.parse(txt);
+                if (parsed && parsed.__inkoro && Array.isArray(parsed.elements)) {
+                  const offset = 10;
+                  let lastId = null;
+                  for (const el of parsed.elements) {
+                    const clone = JSON.parse(JSON.stringify(el));
+                    clone.id = crypto.randomUUID();
+                    clone.x = (clone.x ?? 100) + offset;
+                    clone.y = (clone.y ?? 100) + offset;
+                    addLayer(currentPage, clone);
+                    lastId = clone.id;
+                  }
+                  if (lastId) selectElement(lastId);
+                  try { const { toast } = await import('sonner'); toast('Pasted elements'); } catch (err) {}
+                  return;
+                }
+              } catch (err) {
+                // not JSON
+              }
             }
 
             // plain text paste
@@ -179,7 +226,8 @@ export function Toolbar() {
             const userHeight = 30 / (scale || 1);
             const centerX = (window.innerWidth / 2) / (scale || 1);
             const centerY = (window.innerHeight / 2) / (scale || 1);
-            addLayer(currentPage, { id, type: 'text', x: centerX - userWidth / 2, y: centerY - userHeight / 2, width: userWidth, height: userHeight, rotation: 0, content: txt, style: { fontSize: 16, color: '#000000' } });
+            const content = textType === 'text/html' ? getPlainTextFromHtml(txt) : txt;
+            addLayer(currentPage, { id, type: 'text', x: centerX - userWidth / 2, y: centerY - userHeight / 2, width: userWidth, height: userHeight, rotation: 0, content, style: { fontSize: 16, color: '#000000' } });
             selectElement(id);
             setActiveTool('select');
             try { const { toast } = await import('sonner'); toast('Pasted text'); } catch (err) {}

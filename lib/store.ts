@@ -39,6 +39,22 @@ export interface PDFElement {
   };
 }
 
+const buildInkoroClipboardPayload = (elements: PDFElement[]) =>
+  JSON.stringify({ __inkoro: true, elements });
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+const buildInkoroHtmlPayload = (elements: PDFElement[], fallbackText: string) => {
+  const encoded = encodeURIComponent(buildInkoroClipboardPayload(elements));
+  return `<span data-inkoro="${encoded}">${escapeHtml(fallbackText)}</span>`;
+};
+
 type ClipboardData =
   | { type: 'elements'; elements: PDFElement[] }
   | { type: 'text'; text: string }
@@ -256,8 +272,21 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({ clipboard: { type: 'elements', elements: [cloned] } });
 
       try {
-        if (el.type === 'text' && el.content) {
-          await navigator.clipboard.writeText(el.content);
+        if (el.type === 'text') {
+          const plainText = el.content ?? '';
+          if ((navigator as any).clipboard && (window as any).ClipboardItem) {
+            const html = buildInkoroHtmlPayload([el], plainText);
+            // @ts-ignore
+            const clipboardItem = new ClipboardItem({
+              'text/plain': new Blob([plainText], { type: 'text/plain' }),
+              'text/html': new Blob([html], { type: 'text/html' }),
+            });
+            // @ts-ignore
+            await navigator.clipboard.write([clipboardItem]);
+            return true;
+          }
+
+          await navigator.clipboard.writeText(plainText);
           return true;
         }
 
@@ -416,7 +445,6 @@ if (typeof window !== 'undefined') {
     (window as any).__inkoro_store_subscribed = true;
   }
 }
-
 
 
 
