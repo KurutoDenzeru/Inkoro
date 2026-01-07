@@ -21,7 +21,7 @@
 ## 🧱 Tech Stack
 
 - [Next.js](https://nextjs.org/) + React + TypeScript: Fast development with modern tooling.
-- [Tailwind CSS](https://tailwindcss.com/): Utility-first CSS framework used for styling.
+- [Tailwind](https://tailwindcss.com/): Utility-first CSS framework used for styling.
 - [Shadcn UI / Radix UI](https://ui.shadcn.com/): Headless UI components and patterns.
 - [react-pdf](https://github.com/wojtekmaj/react-pdf) + [pdfjs-dist (pdf.js)](https://www.jsdelivr.com/package/npm/pdfjs-dist): PDF rendering within the browser.
 - [pdf-lib](https://github.com/Hopding/pdf-lib): Client-side PDF creation and modification.
