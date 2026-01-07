@@ -169,9 +169,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   // Text editing state
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
-  const moveStartRef = useRef<{ x: number; y: number; start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   const isComposingRef = useRef(false);
   const TEXT_PADDING_PX = 8;
+  const TEXT_MIN_WIDTH_PX = 40;
+  const TEXT_MIN_HEIGHT_PX = 24;
 
   useEffect(() => {
     // Reset editing state when selection changes
@@ -577,15 +578,15 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     const updates: Partial<PDFElement> = { content: newContent };
 
     if (el) {
-      const neededWidthPx = Math.ceil(target.scrollWidth + TEXT_PADDING_PX);
-      const neededHeightPx = Math.ceil(target.scrollHeight + TEXT_PADDING_PX);
+      const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(target.scrollWidth + TEXT_PADDING_PX));
+      const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(target.scrollHeight + TEXT_PADDING_PX));
       const currentWidthPx = el.width * scale;
       const currentHeightPx = el.height * scale;
 
-      if (neededWidthPx > currentWidthPx + 1) {
+      if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
         updates.width = neededWidthPx / scale;
       }
-      if (neededHeightPx > currentHeightPx + 1) {
+      if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
         updates.height = neededHeightPx / scale;
       }
     }
@@ -616,16 +617,16 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         const contentEl = wrapper.querySelector('[data-inkoro-text]') as HTMLDivElement | null;
         if (!contentEl) continue;
 
-        const neededWidthPx = Math.ceil(contentEl.scrollWidth + TEXT_PADDING_PX);
-        const neededHeightPx = Math.ceil(contentEl.scrollHeight + TEXT_PADDING_PX);
+        const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(contentEl.scrollWidth + TEXT_PADDING_PX));
+        const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(contentEl.scrollHeight + TEXT_PADDING_PX));
         const currentWidthPx = el.width * scale;
         const currentHeightPx = el.height * scale;
 
         const updates: Partial<PDFElement> = {};
-        if (neededWidthPx > currentWidthPx + 1) {
+        if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
           updates.width = neededWidthPx / scale;
         }
-        if (neededHeightPx > currentHeightPx + 1) {
+        if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
           updates.height = neededHeightPx / scale;
         }
         if (Object.keys(updates).length > 0) {
@@ -885,7 +886,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         const handleMove = (ev: MouseEvent) => {
                           const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
                           if (!canvas) return;
-                          const rect = canvas.getBoundingClientRect();
                           const dx = (ev.clientX - startClientX) / scale;
                           const dy = (ev.clientY - startClientY) / scale;
 
@@ -954,7 +954,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         const handleMove = (ev: MouseEvent) => {
                           const canvas = document.querySelector('.absolute.inset-0.z-20') as HTMLElement;
                           if (!canvas) return;
-                          const rect = canvas.getBoundingClientRect();
                           const dx = (ev.clientX - startClientX) / scale;
                           const dy = (ev.clientY - startClientY) / scale;
 
@@ -1183,7 +1182,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                         const startClientY = e.clientY;
                         const origStart = { ...startPoint };
                         const origEnd = { ...endPoint };
-                        const origSloppiness = el.style?.sloppiness ?? 0;
 
                         // Mode detection: undecided at first, then switch to 'curve' or 'move' based on initial drag direction
                         let mode: 'undetermined' | 'move' | 'curve' = 'undetermined';
@@ -1431,7 +1429,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           onRotate={({ target, transform }) => {
             target.style.transform = transform;
           }}
-          onRotateEnd={({ target, lastEvent }) => {
+          onRotateEnd={({ lastEvent }) => {
             if (selectedElement && lastEvent) {
               updateLayer(pageIndex, selectedElement.id, { rotation: lastEvent.rotation });
             }
