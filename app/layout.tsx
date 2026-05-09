@@ -124,7 +124,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} light`} style={{ colorScheme: 'light' }}>
+    <html lang="en" className={`${inter.variable} light`} style={{ colorScheme: 'light' }} suppressHydrationWarning>
       <head>
         <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{const t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');}else if(t==='light'){document.documentElement.classList.remove('dark');}else{const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark', prefersDark);} }catch(e){}})()`}</Script>
         <Script
