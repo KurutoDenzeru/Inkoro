@@ -69,14 +69,14 @@ export function Toolbar() {
     if (!nextDisabled) setCurrentPage(Math.min(currentPage + 1, numPages));
   };
 
-  // Helper to style toolbar icon buttons: active selection appears red; hover is red for inactive buttons
+  // Helper to style toolbar icon buttons: active selection appears primary; hover is primary for inactive buttons
   const iconButtonClass = (isActive = false) =>
     cn(
       buttonVariants({ variant: isActive ? 'default' : 'ghost', size: 'icon' }),
       "h-7 w-7 sm:h-8 sm:w-8 rounded-none transition-all",
       isActive
-        ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
-        : "hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+        ? "bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30"
+        : "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/10 dark:hover:text-primary"
     );
 
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -357,19 +357,19 @@ export function Toolbar() {
               <Shapes className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem nativeButton onClick={() => setActiveTool('rect')}>
+              <DropdownMenuItem onClick={() => setActiveTool('rect')}>
                 <Square className="h-4 w-4 mr-2" />
                 Rectangle
               </DropdownMenuItem>
-              <DropdownMenuItem nativeButton onClick={() => setActiveTool('circle')}>
+              <DropdownMenuItem onClick={() => setActiveTool('circle')}>
                 <Circle className="h-4 w-4 mr-2" />
                 Circle
               </DropdownMenuItem>
-              <DropdownMenuItem nativeButton onClick={() => setActiveTool('line')}>
+              <DropdownMenuItem onClick={() => setActiveTool('line')}>
                 <Minus className="h-4 w-4 mr-2" />
                 Line
               </DropdownMenuItem>
-              <DropdownMenuItem nativeButton onClick={() => setActiveTool('arrow')}>
+              <DropdownMenuItem onClick={() => setActiveTool('arrow')}>
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Arrow
               </DropdownMenuItem>
@@ -497,7 +497,7 @@ export function Toolbar() {
         {/* Mobile: Show dropdown menu with controls */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            nativeButton={false}
+            nativeButton={true}
             className={cn(iconButtonClass(false), "sm:hidden")}
             title="More options"
             aria-label="More options"
@@ -559,12 +559,12 @@ export function Toolbar() {
 
             <div className="h-px bg-border" />
 
-            <DropdownMenuItem nativeButton onClick={handleCopyClick}>
+            <DropdownMenuItem onClick={handleCopyClick}>
               <Copy className="h-4 w-4 mr-2" />
               Copy
             </DropdownMenuItem>
 
-            <DropdownMenuItem nativeButton onClick={handlePasteClick}>
+            <DropdownMenuItem onClick={handlePasteClick}>
               <Clipboard className="h-4 w-4 mr-2" />
               Paste
             </DropdownMenuItem>
@@ -572,7 +572,7 @@ export function Toolbar() {
             <div className="h-px bg-border" />
 
             {/* Download */}
-            <DropdownMenuItem nativeButton onClick={() => setDownloadDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Download
             </DropdownMenuItem>

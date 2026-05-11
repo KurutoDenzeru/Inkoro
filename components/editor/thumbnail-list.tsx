@@ -138,32 +138,36 @@ export function ThumbnailList() {
 
   if (!pdfFile || numPages === 0) return null;
 
-  // Calculate optimal width for thumbnails based on aspect ratio
-  // Smaller thumbnails for better sidebar fit
-  const thumbnailWidth = 220;
+  // Base width for the thumbnail
+  const thumbnailWidth = 180;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 items-center">
       <Document file={pdfFile}>
         {Array.from({ length: numPages }, (_, i) => i + 1).map((page) => {
           const pageElements = useEditorStore.getState().layers[page] || [];
           const pageDim = pageDimensions[page];
+
+          // Calculate height based on actual PDF aspect ratio
+          const thumbnailHeight = pageDim ? Math.round(thumbnailWidth * (pageDim.height / pageDim.width)) : Math.round(thumbnailWidth * 1.4);
           const thumbnailScale = pageDim ? thumbnailWidth / pageDim.width : 1;
 
           return (
             <div
               key={page}
               className={cn(
-                "cursor-pointer border-2 rounded-none overflow-hidden transition-all hover:shadow-md mb-1.5",
-                // 👇 base border is 50% opacity
+                "cursor-pointer border-2 rounded-none overflow-hidden transition-all hover:shadow-md mb-1.5 flex flex-col items-center",
                 currentPage === page
                   ? "border-primary/50 hover:border-primary ring-2 ring-primary/20 shadow-lg"
                   : "border-border/50 hover:border-primary"
               )}
+              style={{ width: thumbnailWidth }}
               onClick={() => setCurrentPage(page)}
             >
-              <div className="relative pointer-events-none bg-white">
-                {/* pointer-events-none to prevent text selection in thumbnail */}
+              <div
+                className="relative bg-white overflow-hidden w-full"
+                style={{ aspectRatio: pageDim ? `${pageDim.width}/${pageDim.height}` : '1/1.4' }}
+              >
                 <Page
                   pageNumber={page}
                   width={thumbnailWidth}
@@ -171,14 +175,13 @@ export function ThumbnailList() {
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
-                {/* Render canvas elements on thumbnail */}
                 <div className="absolute inset-0 pointer-events-none">
                   {pageElements.map((el) => (
                     <ThumbnailElement key={el.id} element={el} scale={thumbnailScale} />
                   ))}
                 </div>
               </div>
-              <div className="text-center text-xs border-t text-muted-foreground py-1 bg-muted font-medium">
+              <div className="w-full text-center text-xs border-t text-muted-foreground py-1 bg-muted font-medium">
                 Page {page}
               </div>
             </div>

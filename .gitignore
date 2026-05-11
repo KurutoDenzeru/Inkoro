@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.lean-ctx
 
 # debug
 npm-debug.log*
