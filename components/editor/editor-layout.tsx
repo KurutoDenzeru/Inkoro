@@ -368,12 +368,12 @@ export function EditorLayout() {
           <SidebarContent className="group-data-[collapsible=icon]:hidden">
             {pdfFile ? (
               <Tabs defaultValue="thumbnails" className="w-full">
-                <TabsList className="w-full grid grid-cols-2 rounded-none bg-transparent p-0 border-b">
-                  <TabsTrigger value="thumbnails" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                <TabsList className="w-full grid grid-cols-2 rounded-none bg-muted/50 p-1 mx-2 mt-2">
+                  <TabsTrigger value="thumbnails" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-sm">
                     <FileText className="h-4 w-4 mr-2" />
                     Pages
                   </TabsTrigger>
-                  <TabsTrigger value="layers" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  <TabsTrigger value="layers" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-sm">
                     <Layers className="h-4 w-4 mr-2" />
                     Layers
                   </TabsTrigger>
