@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Info } from 'lucide-react';
-import { SocialIcon } from '@/components/ui/social-icon';
+import { Info, Globe } from 'lucide-react';
+import { siGithub, siInstagram } from 'simple-icons';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +63,9 @@ export function AboutDialog() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <SocialIcon name="github" className="h-4 w-4" />
+                <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0">
+                  <path d={siGithub.path} />
+                </svg>
                 <span className="text-xs">GitHub</span>
               </a>
               <a
@@ -72,7 +74,9 @@ export function AboutDialog() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <SocialIcon name="instagram" className="h-4 w-4" />
+                <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0">
+                  <path d={siInstagram.path} />
+                </svg>
                 <span className="text-xs">Instagram</span>
               </a>
               <a
@@ -81,7 +85,7 @@ export function AboutDialog() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <SocialIcon name="linkedin" className="h-4 w-4" />
+                <Globe className="h-4 w-4 shrink-0" />
                 <span className="text-xs">Portfolio</span>
               </a>
             </div>
