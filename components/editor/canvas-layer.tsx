@@ -170,13 +170,15 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
   const isComposingRef = useRef(false);
+  const isManualResizeRef = useRef(false);
+  const isManualDragRef = useRef(false);
   const TEXT_PADDING_PX = 8;
   const TEXT_MIN_WIDTH_PX = 40;
   const TEXT_MIN_HEIGHT_PX = 24;
   const OUTER_PAD = 4;
 
   // Measure text dimensions using canvas (not DOM scrollWidth) to avoid overflow-wrap constraints
-  const getTextDimensions = useCallback((text: string | undefined, textStyle: PDFElement['style'], currentScale: number) => {
+  const getTextDimensions = (text: string | undefined, textStyle: PDFElement['style'], currentScale: number) => {
     if (!text) return { widthPx: TEXT_MIN_WIDTH_PX, heightPx: TEXT_MIN_HEIGHT_PX };
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -205,7 +207,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       widthPx: Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(maxWidthPx + totalHPad)),
       heightPx: Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(totalHeightPx + totalVPad)),
     };
-  }, []);
+  };
 
   useEffect(() => {
     // Reset editing state when selection changes
@@ -646,6 +648,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   useEffect(() => {
     const resizeTextElements = () => {
+      if (isManualResizeRef.current || isManualDragRef.current) return;
       for (const el of elements) {
         if (el.type !== 'text') continue;
         const wrapper = elementRefs.current[el.id];
@@ -1444,6 +1447,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           controlPadding={0}
 
           // Drag
+          onDragStart={() => { isManualDragRef.current = true; }}
           onDrag={({ target, left, top }) => {
             target.style.left = `${left}px`;
             target.style.top = `${top}px`;
@@ -1452,9 +1456,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             const x = parseFloat(target.style.left || '0') / scale;
             const y = parseFloat(target.style.top || '0') / scale;
             if (selectedElement) updateLayer(pageIndex, selectedElement.id, { x, y });
+            setTimeout(() => { isManualDragRef.current = false; }, 150);
           }}
 
           // Resize
+          onResizeStart={() => { isManualResizeRef.current = true; }}
           onResize={({ target, width, height, drag }) => {
             target.style.width = `${width}px`;
             target.style.height = `${height}px`;
@@ -1468,13 +1474,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             const y = parseFloat(target.style.top || '0') / scale;
             if (selectedElement) {
               if (selectedElement.type === 'circle') {
-                // Always maintain perfect circle radius
                 const newRadius = Math.min(width, height) / 2;
                 updateLayer(pageIndex, selectedElement.id, { width, height, x, y, style: { ...selectedElement.style, borderRadius: newRadius } });
               } else {
                 updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
               }
             }
+            setTimeout(() => { isManualResizeRef.current = false; }, 150);
           }}
 
           // Rotate
