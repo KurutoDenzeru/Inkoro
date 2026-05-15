@@ -383,6 +383,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const cbEvent = e as ClipboardEvent;
       if (!cbEvent.clipboardData) return;
 
+      e.preventDefault();
+
       // If focus is in an input or editable area, don't override normal paste
       const activeTag = document.activeElement?.tagName?.toLowerCase();
       const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
@@ -414,7 +416,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       }
 
       // HTML content - try to extract Inkoro payload first
-      const html = cbEvent.clipboardData.getData('text/html');
+      let html = '';
+      try { html = cbEvent.clipboardData.getData('text/html'); } catch { /* not available */ }
       if (html) {
         const inkElements = tryParseInkoroHtml(html);
         if (inkElements) {
@@ -448,7 +451,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       }
 
       // Plain text
-      const text = cbEvent.clipboardData.getData('text/plain');
+      let text = '';
+      try { text = cbEvent.clipboardData.getData('text/plain'); } catch { /* not available */ }
       if (text) {
         // Check for Inkoro JSON payload
         const inkElements = tryParseInkoroJson(text);

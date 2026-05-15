@@ -530,7 +530,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   // Mobile layout: full-screen with preview on top, settings below
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none m-0 p-0 gap-0">
+      <DialogContent className="w-screen h-screen max-w-none m-0 p-0 gap-0" showCloseButton={false}>
         {/* Top: Preview */}
         <div className="h-[45vh] flex flex-col border-b">
           {/* Header */}

@@ -29,8 +29,10 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = ('clientX' in e ? e.clientX : e.touches[0].clientX) - rect.left;
-    const y = ('clientY' in e ? e.clientY : e.touches[0].clientY) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (('clientX' in e ? e.clientX : e.touches[0].clientX) - rect.left) * scaleX;
+    const y = (('clientY' in e ? e.clientY : e.touches[0].clientY) - rect.top) * scaleY;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -48,8 +50,10 @@ export function SignatureDialog({ open, onOpenChange }: SignatureDialogProps) {
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = ('clientX' in e ? e.clientX : e.touches[0].clientX) - rect.left;
-    const y = ('clientY' in e ? e.clientY : e.touches[0].clientY) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (('clientX' in e ? e.clientX : e.touches[0].clientX) - rect.left) * scaleX;
+    const y = (('clientY' in e ? e.clientY : e.touches[0].clientY) - rect.top) * scaleY;
 
     ctx.lineTo(x, y);
     ctx.stroke();
