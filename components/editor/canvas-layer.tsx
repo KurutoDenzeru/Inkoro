@@ -691,10 +691,27 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         let newStart = { ...currStart };
         let newEnd = { ...currEnd };
 
+        const rotation = selectedElement.rotation || 0;
+
+        const unrotatePoint = (px: number, py: number) => {
+          if (rotation === 0) return { x: px, y: py };
+          const rad = (rotation * Math.PI) / 180;
+          const cx = selectedElement.x + selectedElement.width / 2;
+          const cy = selectedElement.y + selectedElement.height / 2;
+          const rx = px - cx;
+          const ry = py - cy;
+          const cosR = Math.cos(rad);
+          const sinR = Math.sin(rad);
+          return {
+            x: cx + rx * cosR + ry * sinR,
+            y: cy - rx * sinR + ry * cosR,
+          };
+        };
+
         if (draggingEndpoint === 'start') {
-          newStart = { x: mouseX, y: mouseY };
+          newStart = unrotatePoint(mouseX, mouseY);
         } else {
-          newEnd = { x: mouseX, y: mouseY };
+          newEnd = unrotatePoint(mouseX, mouseY);
         }
 
         const newX = Math.min(newStart.x, newEnd.x);
