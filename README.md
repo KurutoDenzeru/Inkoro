@@ -2,11 +2,11 @@
 
 # 🪶 Inkoro - PDF Editor & Annotator
 
-🪶 Lightweight React + TypeScript PDF editor built with Next.js, react-pdf (pdf.js), pdf-lib, Tailwind, shadcn/ui, Zustand, dnd-kit, html2canvas, and react-moveable.
+🪶 Lightweight React + TypeScript PDF editor built with TanStack Start, react-pdf (pdf.js), pdf-lib, Tailwind, shadcn/ui, Zustand, dnd-kit, html2canvas, and react-moveable.
 
 ## ☁️ Deploy your own
 
-[![Deploy with Vercel](_deploy_vercel.svg)](https://vercel.com/new/clone?repository-url=https://github.com/KurutoDenzeru/Inkoro)  [![Deploy with Netlify](_deploy_netlify.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/KurutoDenzeru/Inkoro)
+[![Deploy with Vercel](_deploy_vercel.svg)](https://vercel.com/new/clone?repository-url=https://github.com/KurutoDenzeru/Inkoro)  [![Deploy with Netlify](_deploy_netlify.svg)](https://app.netlify.com/start/deploy?repository-url=https://github.com/KurutoDenzeru/Inkoro)
 
 ## ✨ Features
 
@@ -20,7 +20,7 @@
 
 ## 🧱 Tech Stack
 
-- [Next.js](https://nextjs.org/) + React + TypeScript: Fast development with modern tooling.
+- [TanStack Start](https://tanstack.com/start) + React + TypeScript: Full-stack framework powered by TanStack Router and Vite.
 - [Tailwind](https://tailwindcss.com/): Utility-first CSS framework used for styling.
 - [Shadcn UI / Radix UI](https://ui.shadcn.com/): Headless UI components and patterns.
 - [react-pdf](https://github.com/wojtekmaj/react-pdf) + [pdfjs-dist (pdf.js)](https://www.jsdelivr.com/package/npm/pdfjs-dist): PDF rendering within the browser.
@@ -39,26 +39,27 @@ bun install
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+Open [http://localhost:5173](http://localhost:5173) to view the app.
 
 
 ## 📦 Build for Production
 
 ```bash
 bun run build
-bun start
+bun run preview
 ```
 
 ## 🗂️ Configuration
 
-The editor is componentized under `src/components`. Key areas to customize are:
+The editor is componentized under `components/`. Key areas to customize are:
 
 ```text
-app/
-	layout.tsx                 # Root layout and metadata
-	page.tsx                   # Main app entry
+src/
+	routes/
+		__root.tsx               # Root layout and metadata
+		index.tsx                # Main app entry
 components/
-	providers.tsx              # Context providers
+	providers.tsx              # Context providers (theme, etc.)
 	editor/
 		editor-layout.tsx      # Editor layout
 		canvas-layer.tsx       # PDF canvas and annotation layer
@@ -83,7 +84,7 @@ lib/
 
 ## 🤝🏻 Contributing
 
-Contributions are always welcome, whether you’re fixing bugs, improving docs, or shipping new features that make the project better for everyone.
+Contributions are always welcome, whether you're fixing bugs, improving docs, or shipping new features that make the project better for everyone.
 
 Check out [Contributing.md](Contributing) to learn how to get started and follow the recommended workflow.
 

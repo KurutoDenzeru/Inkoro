@@ -1,8 +1,6 @@
-'use client';
-
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { Skeleton } from '@/components/ui/skeleton';
+import { createFileRoute } from '@tanstack/react-router'
+import React, { Suspense, lazy } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const EditorSkeleton: React.FC = () => (
   <div role="status" aria-label="Loading the editor" className="h-screen w-screen flex flex-col bg-background text-foreground">
@@ -60,11 +58,17 @@ const EditorSkeleton: React.FC = () => (
   </div>
 )
 
-const EditorLayout = dynamic(() => import('@/components/editor/editor-layout').then(mod => mod.EditorLayout), {
-  ssr: false,
-  loading: () => <EditorSkeleton />
-});
+const EditorLayout = lazy(() => import('@/components/editor/editor-layout').then(mod => ({ default: mod.EditorLayout })))
 
-export default function Page() {
-  return <EditorLayout />;
+export const Route = createFileRoute('/')({
+  component: Home,
+  ssr: false,
+})
+
+function Home() {
+  return (
+    <Suspense fallback={<EditorSkeleton />}>
+      <EditorLayout />
+    </Suspense>
+  )
 }

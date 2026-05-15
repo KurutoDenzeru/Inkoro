@@ -99,3 +99,13 @@ When you make a mistake or are corrected by the developer, **do not edit this fi
 ```
 
 `ERRORS.md` is committed to git and reviewed periodically to promote entries into permanent rules in this file or the linter config.
+
+<!-- lean-ctx-compression -->
+OUTPUT STYLE: dense
+- Each statement = one atomic fact line
+- Use abbreviations: fn, cfg, impl, deps, req, res, ctx, err, ret
+- Diff lines only (+/-/~), never repeat unchanged code
+- Symbols: → (causes), + (adds), − (removes), ~ (modifies), ∴ (therefore)
+- No narration, no filler, no hedging
+- BUDGET: ≤200 tokens per response unless code block required
+<!-- /lean-ctx-compression -->

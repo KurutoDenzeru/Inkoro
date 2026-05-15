@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Info, Github, Instagram, Linkedin } from 'lucide-react';
+import { Info, Globe } from 'lucide-react';
+import { siGithub, siInstagram } from 'simple-icons';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,7 @@ export function AboutDialog() {
           <div>
             <h3 className="font-semibold mb-2 text-base">Tech Stack</h3>
             <div className="flex flex-wrap gap-2">
-              {['Next.js', 'React', 'TypeScript', 'Tailwind', 'pdf-lib', 'react-pdf', 'Zustand', 'shadcn/ui'].map((tech) => (
+              {['TanStack Start', 'React', 'TypeScript', 'Tailwind', 'pdf-lib', 'react-pdf', 'Zustand', 'shadcn/ui'].map((tech) => (
                 <span key={tech} className="px-2 py-1 bg-muted rounded-none text-xs">
                   {tech}
                 </span>
@@ -62,7 +63,9 @@ export function AboutDialog() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <Github className="h-4 w-4" />
+                <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0">
+                  <path d={siGithub.path} />
+                </svg>
                 <span className="text-xs">GitHub</span>
               </a>
               <a
@@ -71,17 +74,19 @@ export function AboutDialog() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <Instagram className="h-4 w-4" />
+                <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0">
+                  <path d={siInstagram.path} />
+                </svg>
                 <span className="text-xs">Instagram</span>
               </a>
               <a
-                href="https://www.linkedin.com/in/kurtcalacday/"
+                href="https://kurtcalacday.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-none border hover:bg-muted transition-colors"
               >
-                <Linkedin className="h-4 w-4" />
-                <span className="text-xs">LinkedIn</span>
+                <Globe className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Portfolio</span>
               </a>
             </div>
           </div>
