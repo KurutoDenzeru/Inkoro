@@ -173,6 +173,39 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const TEXT_PADDING_PX = 8;
   const TEXT_MIN_WIDTH_PX = 40;
   const TEXT_MIN_HEIGHT_PX = 24;
+  const OUTER_PAD = 4;
+
+  // Measure text dimensions using canvas (not DOM scrollWidth) to avoid overflow-wrap constraints
+  const getTextDimensions = useCallback((text: string | undefined, textStyle: PDFElement['style'], currentScale: number) => {
+    if (!text) return { widthPx: TEXT_MIN_WIDTH_PX, heightPx: TEXT_MIN_HEIGHT_PX };
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return { widthPx: TEXT_MIN_WIDTH_PX, heightPx: TEXT_MIN_HEIGHT_PX };
+
+    const fontSize = (textStyle.fontSize || 16) * currentScale;
+    const fontFamily = textStyle.fontFamily || 'Inter';
+    const fontWeight = textStyle.fontWeight || 'normal';
+    const fontStyle = textStyle.fontStyle || 'normal';
+    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+
+    const lines = text.split('\n');
+    let maxWidthPx = 0;
+    for (const line of lines) {
+      const metrics = ctx.measureText(line);
+      maxWidthPx = Math.max(maxWidthPx, metrics.width);
+    }
+
+    const lineHeightPx = fontSize * 1.3;
+    const totalHeightPx = lines.length * lineHeightPx;
+
+    const totalHPad = TEXT_PADDING_PX + OUTER_PAD * 2;
+    const totalVPad = TEXT_PADDING_PX + OUTER_PAD * 2;
+
+    return {
+      widthPx: Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(maxWidthPx + totalHPad)),
+      heightPx: Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(totalHeightPx + totalVPad)),
+    };
+  }, []);
 
   useEffect(() => {
     // Reset editing state when selection changes
@@ -582,16 +615,15 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     const updates: Partial<PDFElement> = { content: newContent };
 
     if (el) {
-      const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(target.scrollWidth + TEXT_PADDING_PX));
-      const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(target.scrollHeight + TEXT_PADDING_PX));
+      const { widthPx, heightPx } = getTextDimensions(newContent, el.style, scale);
       const currentWidthPx = el.width * scale;
       const currentHeightPx = el.height * scale;
 
-      if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
-        updates.width = neededWidthPx / scale;
+      if (Math.abs(widthPx - currentWidthPx) > 1) {
+        updates.width = widthPx / scale;
       }
-      if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
-        updates.height = neededHeightPx / scale;
+      if (Math.abs(heightPx - currentHeightPx) > 1) {
+        updates.height = heightPx / scale;
       }
     }
 
@@ -621,17 +653,16 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         const contentEl = wrapper.querySelector('[data-inkoro-text]') as HTMLDivElement | null;
         if (!contentEl) continue;
 
-        const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(contentEl.scrollWidth + TEXT_PADDING_PX));
-        const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(contentEl.scrollHeight + TEXT_PADDING_PX));
+        const { widthPx, heightPx } = getTextDimensions(el.content, el.style, scale);
         const currentWidthPx = el.width * scale;
         const currentHeightPx = el.height * scale;
 
         const updates: Partial<PDFElement> = {};
-        if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
-          updates.width = neededWidthPx / scale;
+        if (Math.abs(widthPx - currentWidthPx) > 1) {
+          updates.width = widthPx / scale;
         }
-        if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
-          updates.height = neededHeightPx / scale;
+        if (Math.abs(heightPx - currentHeightPx) > 1) {
+          updates.height = heightPx / scale;
         }
         if (Object.keys(updates).length > 0) {
           updateLayer(pageIndex, el.id, updates);
