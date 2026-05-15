@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { DownloadDialog } from "./download-dialog";
 import { AboutDialog } from "@/components/ui/about-dialog";
 import { useDialogStore } from "@/hooks/use-dialogs";
@@ -335,6 +335,62 @@ export function EditorLayout() {
   const { pdfFile } = useEditorStore();
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 
+  // Canvas panning state (spacebar + drag)
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOffsetAtStartRef = useRef({ x: 0, y: 0 });
+
+  // Spacebar keyboard listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+        if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
+        e.preventDefault();
+        setIsSpaceHeld(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        setIsSpaceHeld(false);
+        setIsPanning(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const handlePanStart = useCallback((e: React.MouseEvent) => {
+    setIsPanning(true);
+    panStartRef.current = { x: e.clientX, y: e.clientY };
+    panOffsetAtStartRef.current = { ...panOffset };
+  }, [panOffset]);
+
+  const handlePanMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    setPanOffset({
+      x: panOffsetAtStartRef.current.x + dx,
+      y: panOffsetAtStartRef.current.y + dy,
+    });
+  }, [isPanning]);
+
+  const handlePanEnd = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  const panCursor = isSpaceHeld ? (isPanning ? 'grabbing' : 'grab') : undefined;
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -414,11 +470,31 @@ export function EditorLayout() {
         </Sidebar>
 
         <main className="flex-1 relative h-full w-full overflow-hidden bg-gray-100/50 dark:bg-gray-900/50">
-          <div className="absolute inset-0 overflow-auto pt-8 pb-4 px-8 custom-scrollbar">
-            <div className="flex items-center justify-center min-h-full">
+          <div
+            className="absolute inset-0 overflow-hidden pt-8 pb-4 px-8 custom-scrollbar"
+            style={panCursor ? { cursor: panCursor } : undefined}
+          >
+            <div
+              className="flex items-center justify-center min-h-full transition-transform duration-0"
+              style={{
+                transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
+              }}
+            >
               {pdfFile ? <PDFViewer /> : <div className="text-muted-foreground">No PDF Loaded</div>}
             </div>
           </div>
+
+          {/* Pan overlay: captures mouse events when spacebar is held */}
+          {isSpaceHeld && (
+            <div
+              className="absolute inset-0 z-10"
+              style={{ cursor: panCursor }}
+              onMouseDown={handlePanStart}
+              onMouseMove={handlePanMove}
+              onMouseUp={handlePanEnd}
+              onMouseLeave={handlePanEnd}
+            />
+          )}
 
           <SidebarToggleButton setDownloadDialogOpen={setDownloadDialogOpen} />
           <SidebarShortcutListener />

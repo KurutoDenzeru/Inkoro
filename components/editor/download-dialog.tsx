@@ -396,7 +396,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                       </div>
                       <Slider
                         value={quality}
-                        onValueChange={setQuality}
+                        onValueChange={(v) => { if (typeof v === 'number') setQuality(v); }}
                         min={10}
                         max={100}
                         step={5}
@@ -415,7 +415,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                       </div>
                       <Slider
                         value={scale}
-                        onValueChange={setScale}
+                        onValueChange={(v) => { if (typeof v === 'number') setScale(v); }}
                         min={1}
                         max={4}
                         step={0.5}
@@ -670,8 +670,8 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                     </span>
                   </div>
                   <Slider
-                    value={[quality]}
-                    onValueChange={([v]) => setQuality(v)}
+                    value={quality}
+                    onValueChange={(v) => { if (typeof v === 'number') setQuality(v); }}
                     min={10}
                     max={100}
                     step={5}
@@ -687,8 +687,8 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                     </span>
                   </div>
                   <Slider
-                    value={[scale]}
-                    onValueChange={([v]) => setScale(v)}
+                    value={scale}
+                    onValueChange={(v) => { if (typeof v === 'number') setScale(v); }}
                     min={1}
                     max={4}
                     step={0.5}
