@@ -395,8 +395,8 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                         </span>
                       </div>
                       <Slider
-                        value={[quality]}
-                        onValueChange={([v]) => setQuality(v)}
+                        value={quality}
+                        onValueChange={setQuality}
                         min={10}
                         max={100}
                         step={5}
@@ -414,8 +414,8 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                         </span>
                       </div>
                       <Slider
-                        value={[scale]}
-                        onValueChange={([v]) => setScale(v)}
+                        value={scale}
+                        onValueChange={setScale}
                         min={1}
                         max={4}
                         step={0.5}

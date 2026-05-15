@@ -486,12 +486,12 @@ export function Toolbar() {
             render={(props) => <button {...props} />}
             className={cn(iconButtonClass(false), "hidden sm:flex")}
             onClick={() => setDownloadDialogOpen(true)}
-            title="Download"
-            aria-label="Download document"
+            title="Export"
+            aria-label="Export document"
           >
             <Download className="h-4 w-4" />
           </TooltipTrigger>
-          <TooltipContent>Download</TooltipContent>
+          <TooltipContent>Export</TooltipContent>
         </Tooltip>
 
         {/* Mobile: Show dropdown menu with controls */}
@@ -571,10 +571,10 @@ export function Toolbar() {
 
             <div className="h-px bg-border" />
 
-            {/* Download */}
+            {/* Export */}
             <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
-              Download
+              Export
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
