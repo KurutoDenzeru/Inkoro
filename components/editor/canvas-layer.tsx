@@ -170,9 +170,44 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
   const isComposingRef = useRef(false);
+  const isManualResizeRef = useRef(false);
+  const isManualDragRef = useRef(false);
   const TEXT_PADDING_PX = 8;
   const TEXT_MIN_WIDTH_PX = 40;
   const TEXT_MIN_HEIGHT_PX = 24;
+  const OUTER_PAD = 4;
+
+  // Measure text dimensions using canvas (not DOM scrollWidth) to avoid overflow-wrap constraints
+  const getTextDimensions = (text: string | undefined, textStyle: PDFElement['style'], currentScale: number) => {
+    if (!text) return { widthPx: TEXT_MIN_WIDTH_PX, heightPx: TEXT_MIN_HEIGHT_PX };
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return { widthPx: TEXT_MIN_WIDTH_PX, heightPx: TEXT_MIN_HEIGHT_PX };
+
+    const fontSize = (textStyle.fontSize || 16) * currentScale;
+    const fontFamily = textStyle.fontFamily || 'Inter';
+    const fontWeight = textStyle.fontWeight || 'normal';
+    const fontStyle = textStyle.fontStyle || 'normal';
+    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+
+    const lines = text.split('\n');
+    let maxWidthPx = 0;
+    for (const line of lines) {
+      const metrics = ctx.measureText(line);
+      maxWidthPx = Math.max(maxWidthPx, metrics.width);
+    }
+
+    const lineHeightPx = fontSize * 1.3;
+    const totalHeightPx = lines.length * lineHeightPx;
+
+    const totalHPad = TEXT_PADDING_PX + OUTER_PAD * 2;
+    const totalVPad = TEXT_PADDING_PX + OUTER_PAD * 2;
+
+    return {
+      widthPx: Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(maxWidthPx + totalHPad)),
+      heightPx: Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(totalHeightPx + totalVPad)),
+    };
+  };
 
   useEffect(() => {
     // Reset editing state when selection changes
@@ -383,6 +418,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const cbEvent = e as ClipboardEvent;
       if (!cbEvent.clipboardData) return;
 
+      e.preventDefault();
+
       // If focus is in an input or editable area, don't override normal paste
       const activeTag = document.activeElement?.tagName?.toLowerCase();
       const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
@@ -414,7 +451,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       }
 
       // HTML content - try to extract Inkoro payload first
-      const html = cbEvent.clipboardData.getData('text/html');
+      let html = '';
+      try { html = cbEvent.clipboardData.getData('text/html'); } catch { /* not available */ }
       if (html) {
         const inkElements = tryParseInkoroHtml(html);
         if (inkElements) {
@@ -448,7 +486,8 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       }
 
       // Plain text
-      const text = cbEvent.clipboardData.getData('text/plain');
+      let text = '';
+      try { text = cbEvent.clipboardData.getData('text/plain'); } catch { /* not available */ }
       if (text) {
         // Check for Inkoro JSON payload
         const inkElements = tryParseInkoroJson(text);
@@ -578,16 +617,15 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     const updates: Partial<PDFElement> = { content: newContent };
 
     if (el) {
-      const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(target.scrollWidth + TEXT_PADDING_PX));
-      const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(target.scrollHeight + TEXT_PADDING_PX));
+      const { widthPx, heightPx } = getTextDimensions(newContent, el.style, scale);
       const currentWidthPx = el.width * scale;
       const currentHeightPx = el.height * scale;
 
-      if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
-        updates.width = neededWidthPx / scale;
+      if (Math.abs(widthPx - currentWidthPx) > 1) {
+        updates.width = widthPx / scale;
       }
-      if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
-        updates.height = neededHeightPx / scale;
+      if (Math.abs(heightPx - currentHeightPx) > 1) {
+        updates.height = heightPx / scale;
       }
     }
 
@@ -610,6 +648,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
   useEffect(() => {
     const resizeTextElements = () => {
+      if (isManualResizeRef.current || isManualDragRef.current) return;
       for (const el of elements) {
         if (el.type !== 'text') continue;
         const wrapper = elementRefs.current[el.id];
@@ -617,17 +656,16 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         const contentEl = wrapper.querySelector('[data-inkoro-text]') as HTMLDivElement | null;
         if (!contentEl) continue;
 
-        const neededWidthPx = Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(contentEl.scrollWidth + TEXT_PADDING_PX));
-        const neededHeightPx = Math.max(TEXT_MIN_HEIGHT_PX, Math.ceil(contentEl.scrollHeight + TEXT_PADDING_PX));
+        const { widthPx, heightPx } = getTextDimensions(el.content, el.style, scale);
         const currentWidthPx = el.width * scale;
         const currentHeightPx = el.height * scale;
 
         const updates: Partial<PDFElement> = {};
-        if (Math.abs(neededWidthPx - currentWidthPx) > 1) {
-          updates.width = neededWidthPx / scale;
+        if (Math.abs(widthPx - currentWidthPx) > 1) {
+          updates.width = widthPx / scale;
         }
-        if (Math.abs(neededHeightPx - currentHeightPx) > 1) {
-          updates.height = neededHeightPx / scale;
+        if (Math.abs(heightPx - currentHeightPx) > 1) {
+          updates.height = heightPx / scale;
         }
         if (Object.keys(updates).length > 0) {
           updateLayer(pageIndex, el.id, updates);
@@ -687,10 +725,27 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
         let newStart = { ...currStart };
         let newEnd = { ...currEnd };
 
+        const rotation = selectedElement.rotation || 0;
+
+        const unrotatePoint = (px: number, py: number) => {
+          if (rotation === 0) return { x: px, y: py };
+          const rad = (rotation * Math.PI) / 180;
+          const cx = selectedElement.x + selectedElement.width / 2;
+          const cy = selectedElement.y + selectedElement.height / 2;
+          const rx = px - cx;
+          const ry = py - cy;
+          const cosR = Math.cos(rad);
+          const sinR = Math.sin(rad);
+          return {
+            x: cx + rx * cosR + ry * sinR,
+            y: cy - rx * sinR + ry * cosR,
+          };
+        };
+
         if (draggingEndpoint === 'start') {
-          newStart = { x: mouseX, y: mouseY };
+          newStart = unrotatePoint(mouseX, mouseY);
         } else {
-          newEnd = { x: mouseX, y: mouseY };
+          newEnd = unrotatePoint(mouseX, mouseY);
         }
 
         const newX = Math.min(newStart.x, newEnd.x);
@@ -1392,6 +1447,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           controlPadding={0}
 
           // Drag
+          onDragStart={() => { isManualDragRef.current = true; }}
           onDrag={({ target, left, top }) => {
             target.style.left = `${left}px`;
             target.style.top = `${top}px`;
@@ -1400,9 +1456,11 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             const x = parseFloat(target.style.left || '0') / scale;
             const y = parseFloat(target.style.top || '0') / scale;
             if (selectedElement) updateLayer(pageIndex, selectedElement.id, { x, y });
+            setTimeout(() => { isManualDragRef.current = false; }, 150);
           }}
 
           // Resize
+          onResizeStart={() => { isManualResizeRef.current = true; }}
           onResize={({ target, width, height, drag }) => {
             target.style.width = `${width}px`;
             target.style.height = `${height}px`;
@@ -1416,13 +1474,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             const y = parseFloat(target.style.top || '0') / scale;
             if (selectedElement) {
               if (selectedElement.type === 'circle') {
-                // Always maintain perfect circle radius
                 const newRadius = Math.min(width, height) / 2;
                 updateLayer(pageIndex, selectedElement.id, { width, height, x, y, style: { ...selectedElement.style, borderRadius: newRadius } });
               } else {
                 updateLayer(pageIndex, selectedElement.id, { width, height, x, y });
               }
             }
+            setTimeout(() => { isManualResizeRef.current = false; }, 150);
           }}
 
           // Rotate
