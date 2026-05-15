@@ -437,7 +437,7 @@ export function EditorLayout() {
                 <TabsContent value="thumbnails" className="h-[calc(100vh-8rem)] overflow-y-auto p-4">
                   <ThumbnailList />
                 </TabsContent>
-                <TabsContent value="layers" className="h-[calc(100vh-8rem)] overflow-y-auto p-4">
+                <TabsContent value="layers" className="h-[calc(100vh-8rem)] p-4">
                   <LayerList />
                 </TabsContent>
               </Tabs>

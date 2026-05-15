@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 function SortableItem(props: { id: string; type: string; label?: string; selected: boolean; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
   const {
@@ -86,7 +87,9 @@ export function LayerList() {
   const elements = layers[currentPage] || [];
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -117,26 +120,28 @@ export function LayerList() {
         items={elements.map(e => e.id)}
         strategy={verticalListSortingStrategy}
       >
-        {elements.slice().reverse().map((el) => {
-          const label = el.type === 'text' ? (el.content ? String(el.content).split('\n')[0] : 'Text') : el.type === 'image' ? 'Image' : el.type;
-          return (
-            <SortableItem
-              key={el.id}
-              id={el.id}
-              type={el.type}
-              label={label}
-              selected={el.id === selectedElementId}
-              onClick={() => {
-                selectElement(el.id);
-                // Ensure select tool is active so bounding box shows and users can manipulate
-                useEditorStore.getState().setActiveTool('select');
-                // Also dispatch the focus event for canvas
-                try { window.dispatchEvent(new CustomEvent('inkoro-focus-element', { detail: { id: el.id } })); } catch (err) {}
-              }}
-              onDelete={(e) => { e.stopPropagation(); removeLayer(currentPage, el.id); }}
-            />
-          );
-        })}
+        <ScrollArea className="h-full">
+          <div className="space-y-1 p-1">
+            {elements.slice().reverse().map((el) => {
+              const label = el.type === 'text' ? (el.content ? String(el.content).split('\n')[0] : 'Text') : el.type === 'image' ? 'Image' : el.type;
+              return (
+                <SortableItem
+                  key={el.id}
+                  id={el.id}
+                  type={el.type}
+                  label={label}
+                  selected={el.id === selectedElementId}
+                  onClick={() => {
+                    selectElement(el.id);
+                    useEditorStore.getState().setActiveTool('select');
+                    try { window.dispatchEvent(new CustomEvent('inkoro-focus-element', { detail: { id: el.id } })); } catch (err) {}
+                  }}
+                  onDelete={(e) => { e.stopPropagation(); removeLayer(currentPage, el.id); }}
+                />
+              );
+            })}
+          </div>
+        </ScrollArea>
       </SortableContext>
     </DndContext>
   );
