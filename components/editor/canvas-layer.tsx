@@ -1,6 +1,43 @@
 'use client';
 
 import { useEditorStore, PDFElement } from '@/lib/store';
+import { TEXT_LINE_HEIGHT, TEXT_PADDING_X, TEXT_PADDING_Y } from '@/lib/text-metrics';
+
+interface LinePoint {
+  x: number;
+  y: number;
+}
+
+// Bounding box for a line/arrow element. Must include the quadratic curve
+// control point (midpoint + normal * sloppiness): the center handle sits there,
+// and without it the box excludes the curve so the SVG viewport clips the line.
+function computeLineBounds(
+  start: LinePoint,
+  end: LinePoint,
+  sloppiness: number,
+  borderWidth: number,
+  hasArrow: boolean,
+) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const nx = -dy / len;
+  const ny = dx / len;
+  const controlX = (start.x + end.x) / 2 + nx * sloppiness;
+  const controlY = (start.y + end.y) / 2 + ny * sloppiness;
+  const minX = Math.min(start.x, end.x, controlX);
+  const minY = Math.min(start.y, end.y, controlY);
+  const maxX = Math.max(start.x, end.x, controlX);
+  const maxY = Math.max(start.y, end.y, controlY);
+  const arrowPad = hasArrow ? borderWidth * 3 : 0;
+  const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
+  return {
+    x: minX - strokePadding,
+    y: minY - strokePadding,
+    width: Math.max(maxX - minX, 10) + strokePadding * 2,
+    height: Math.max(maxY - minY, 10) + strokePadding * 2,
+  };
+}
 import { useRef, useState, useEffect } from 'react';
 import Moveable from 'react-moveable';
 import { cn } from '@/lib/utils'; // Assuming shadcn init
@@ -94,10 +131,13 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     let newElement: PDFElement | null = null;
 
     if (activeTool === 'text') {
+      const content = 'Double click to edit';
+      const style = { fontSize: 16, color: '#000000' };
+      const { widthPx, heightPx } = getTextDimensions(content, style, scale);
       newElement = {
-        id, type: 'text', x, y, width: 200, height: 30, rotation: 0,
-        content: 'Double click to edit',
-        style: { fontSize: 16, color: '#000000' }
+        id, type: 'text', x, y, width: widthPx / scale, height: heightPx / scale, rotation: 0,
+        content,
+        style
       };
     } else if (activeTool === 'rect') {
       newElement = {
@@ -169,13 +209,17 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   // Text editing state
   const [isEditing, setIsEditing] = useState(false);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
-  const isComposingRef = useRef(false);
+  const moveableRef = useRef<Moveable | null>(null);
   const isManualResizeRef = useRef(false);
   const isManualDragRef = useRef(false);
-  const TEXT_PADDING_PX = 8;
+
+  // Keep the Moveable bounding box synced with programmatic geometry changes
+  // (typing, paste, measurement passes). Without this it lags at the old size.
+  useEffect(() => {
+    moveableRef.current?.updateRect();
+  }, [selectedElement, scale]);
   const TEXT_MIN_WIDTH_PX = 40;
   const TEXT_MIN_HEIGHT_PX = 24;
-  const OUTER_PAD = 4;
 
   // Measure text dimensions using canvas (not DOM scrollWidth) to avoid overflow-wrap constraints
   const getTextDimensions = (text: string | undefined, textStyle: PDFElement['style'], currentScale: number) => {
@@ -197,11 +241,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       maxWidthPx = Math.max(maxWidthPx, metrics.width);
     }
 
-    const lineHeightPx = fontSize * 1.3;
+    const lineHeightPx = fontSize * TEXT_LINE_HEIGHT;
     const totalHeightPx = lines.length * lineHeightPx;
 
-    const totalHPad = TEXT_PADDING_PX + OUTER_PAD * 2;
-    const totalVPad = TEXT_PADDING_PX + OUTER_PAD * 2;
+    // Padding in scaled px so the box matches the render at any zoom
+    const totalHPad = TEXT_PADDING_X * 2 * currentScale;
+    const totalVPad = TEXT_PADDING_Y * 2 * currentScale;
 
     return {
       widthPx: Math.max(TEXT_MIN_WIDTH_PX, Math.ceil(maxWidthPx + totalHPad)),
@@ -512,7 +557,20 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           return;
         }
 
-        // Otherwise it's plain text - create text element
+        // Otherwise it's plain text - insert into the active text element's
+        // bounding box when one is selected, else create a new element at center
+        const fresh = useEditorStore.getState();
+        const selEl = (fresh.layers[pageIndex] || []).find((l) => l.id === fresh.selectedElementId);
+        if (selEl?.type === 'text') {
+          const newContent = (selEl.content ?? '') + text;
+          const { widthPx, heightPx } = getTextDimensions(newContent, selEl.style, scale);
+          fresh.updateLayer(pageIndex, selEl.id, {
+            content: newContent,
+            width: widthPx / scale,
+            height: heightPx / scale,
+          });
+          return;
+        }
         addTextFromString(text);
       }
     };
@@ -531,6 +589,9 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           const editable = elDiv.querySelector('[contenteditable]') as HTMLElement | null;
           if (editable) {
             try {
+              // React renders no children while editing, so seed the content manually
+              const content = (layers[pageIndex] || []).find((l) => l.id === id)?.content ?? '';
+              if (editable.textContent !== content) editable.textContent = content;
               editable.focus();
               // Try to position caret near click using offset from point
               // We fallback to end of text if the browser doesn't support caretRangeFromPoint
@@ -563,16 +624,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       });
     }
   };
-
-  function getCaretCharacterOffsetWithin(element: Node) {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return 0;
-    const range = sel.getRangeAt(0).cloneRange();
-    const preCaretRange = range.cloneRange();
-    preCaretRange.selectNodeContents(element);
-    preCaretRange.setEnd(range.endContainer, range.endOffset);
-    return preCaretRange.toString().length;
-  }
 
   function setCaretPosition(element: Node, chars: number) {
     const range = document.createRange();
@@ -617,7 +668,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
   const handleTextChange = (e: React.FormEvent<HTMLDivElement>, id: string) => {
     const target = e.currentTarget;
     const newContent = target.innerText;
-    const caretOffset = getCaretCharacterOffsetWithin(target);
     const el = (layers[pageIndex] || []).find((layer) => layer.id === id);
     const updates: Partial<PDFElement> = { content: newContent };
 
@@ -635,16 +685,6 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
     }
 
     updateLayer(pageIndex, id, updates);
-
-    if (!isComposingRef.current) {
-      requestAnimationFrame(() => {
-        try {
-          setCaretPosition(target, caretOffset);
-        } catch (err) {
-          console.debug('Cursor restore failed', err);
-        }
-      });
-    }
   };
 
   const handleBlur = () => {
@@ -753,27 +793,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
           newEnd = unrotatePoint(mouseX, mouseY);
         }
 
-        const newX = Math.min(newStart.x, newEnd.x);
-        const newY = Math.min(newStart.y, newEnd.y);
-        const newWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-        const newHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
-
-        // Add padding for stroke width and curve - ensure minimum padding
         const borderWidth = selectedElement.style?.borderWidth ?? 1;
         const hasArrow = !!(selectedElement.style?.arrowStart || selectedElement.style?.arrowEnd);
-        const arrowPad = hasArrow ? borderWidth * 3 : 0; // reduced arrow padding
-        const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-        const paddedX = newX - strokePadding;
-        const paddedY = newY - strokePadding;
-        const paddedWidth = newWidth + strokePadding * 2;
-        const paddedHeight = newHeight + strokePadding * 2;
+        const bounds = computeLineBounds(newStart, newEnd, selectedElement.style?.sloppiness ?? 0, borderWidth, hasArrow);
 
-        // Keep existing sloppiness - don't auto-compute
         updateLayer(pageIndex, selectedElement.id, {
-          x: paddedX,
-          y: paddedY,
-          width: paddedWidth,
-          height: paddedHeight,
+          ...bounds,
           style: { ...selectedElement.style, start: newStart, end: newEnd }
         });
       });
@@ -811,6 +836,14 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       {elements.map((el, index) => {
         const isSelected = el.id === selectedElementId;
         const isTextEditing = isSelected && isEditing && el.type === 'text';
+        // Bounding box states: solid = active (selected/editing), dashed = idle text, none = other idle
+        const boxOutline = (el.type === 'line' || el.type === 'arrow')
+          ? 'none'
+          : isSelected
+            ? '2px solid #d97757'
+            : el.type === 'text'
+              ? '1px dashed rgba(0, 0, 0, 0.2)'
+              : 'none';
 
         // Precompute endpoint coordinates (absolute and local to element) for lines/arrows
         const startPoint = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
@@ -868,9 +901,10 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
               borderBottomRightRadius: `${(el.style.borderBottomRightRadius ?? el.style.borderRadius ?? 0) * scale}px`,
 
               opacity: el.style.opacity ?? 1,
-              padding: el.type === 'text' ? '4px' : '0',
+              padding: el.type === 'text' ? `${TEXT_PADDING_Y * scale}px ${TEXT_PADDING_X * scale}px` : '0',
+              lineHeight: el.type === 'text' ? String(TEXT_LINE_HEIGHT) : undefined,
               cursor: activeTool === 'select' ? (isSelected ? 'move' : 'pointer') : 'default',
-              outline: (isSelected && !isEditing && el.type !== 'line' && el.type !== 'arrow') ? '2px solid #d97757' : 'none',
+              outline: boxOutline,
               zIndex: isSelected ? 1000 : index + 1,
             }}
             onClick={(e) => handleElementClick(e, el.id)}
@@ -952,24 +986,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const newStart = { x: origStart.x + dx, y: origStart.y + dy };
                           const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
 
-                          const minX = Math.min(newStart.x, newEnd.x);
-                          const minY = Math.min(newStart.y, newEnd.y);
-                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                          const newX = minX - strokePadding;
-                          const newY = minY - strokePadding;
-                          const newWidth = rawWidth + strokePadding * 2;
-                          const newHeight = rawHeight + strokePadding * 2;
+                          const bounds = computeLineBounds(newStart, newEnd, el.style?.sloppiness ?? 0, borderWidth, hasArrow);
 
                           updateLayer(pageIndex, el.id, {
-                            x: newX,
-                            y: newY,
-                            width: newWidth,
-                            height: newHeight,
+                            ...bounds,
                             style: { ...el.style, start: newStart, end: newEnd }
                           });
                         };
@@ -1020,24 +1042,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const newStart = { x: origStart.x + dx, y: origStart.y + dy };
                           const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
 
-                          const minX = Math.min(newStart.x, newEnd.x);
-                          const minY = Math.min(newStart.y, newEnd.y);
-                          const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-                          const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                          const newX = minX - strokePadding;
-                          const newY = minY - strokePadding;
-                          const newWidth = rawWidth + strokePadding * 2;
-                          const newHeight = rawHeight + strokePadding * 2;
+                          const bounds = computeLineBounds(newStart, newEnd, el.style?.sloppiness ?? 0, borderWidth, hasArrow);
 
                           updateLayer(pageIndex, el.id, {
-                            x: newX,
-                            y: newY,
-                            width: newWidth,
-                            height: newHeight,
+                            ...bounds,
                             style: { ...el.style, start: newStart, end: newEnd }
                           });
                         };
@@ -1082,24 +1092,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                       const newStart = { x: origStart.x + dx, y: origStart.y + dy };
                       const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
 
-                      const minX = Math.min(newStart.x, newEnd.x);
-                      const minY = Math.min(newStart.y, newEnd.y);
-                      const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-                      const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
                       const borderWidth = el.style?.borderWidth ?? 1;
                       const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                      const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                      const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                      const newX = minX - strokePadding;
-                      const newY = minY - strokePadding;
-                      const newWidth = rawWidth + strokePadding * 2;
-                      const newHeight = rawHeight + strokePadding * 2;
+                      const bounds = computeLineBounds(newStart, newEnd, el.style?.sloppiness ?? 0, borderWidth, hasArrow);
 
                       updateLayer(pageIndex, el.id, {
-                        x: newX,
-                        y: newY,
-                        width: newWidth,
-                        height: newHeight,
+                        ...bounds,
                         style: { ...el.style, start: newStart, end: newEnd }
                       });
                     };
@@ -1189,50 +1187,20 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           const newSl = 50; // default curve amount when enabling
                           const start = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
                           const end = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
-                          const midX = (start.x + end.x) / 2;
-                          const midY = (start.y + end.y) / 2;
-                          const tx = end.x - start.x;
-                          const ty = end.y - start.y;
-                          const tlen = Math.max(1, Math.hypot(tx, ty));
-                          const ntx = tx / tlen;
-                          const nty = ty / tlen;
-                          const nx = -nty;
-                          const ny = ntx;
-                          const controlX = midX + nx * newSl;
-                          const controlY = midY + ny * newSl;
-
-                          const minX = Math.min(start.x, end.x, controlX);
-                          const minY = Math.min(start.y, end.y, controlY);
-                          const rawWidth = Math.max(Math.max(start.x, end.x, controlX) - minX, 10);
-                          const rawHeight = Math.max(Math.max(start.y, end.y, controlY) - minY, 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                          const newX = minX - strokePadding;
-                          const newY = minY - strokePadding;
-                          const newWidth = rawWidth + strokePadding * 2;
-                          const newHeight = rawHeight + strokePadding * 2;
+                          const bounds = computeLineBounds(start, end, newSl, borderWidth, hasArrow);
 
-                          updateLayer(pageIndex, el.id, { x: newX, y: newY, width: newWidth, height: newHeight, style: { ...el.style, sloppiness: newSl } });
+                          updateLayer(pageIndex, el.id, { ...bounds, style: { ...el.style, sloppiness: newSl } });
                         } else {
                           const newSl = 0;
                           const start = el.style?.start ?? { x: el.x, y: el.y + el.height / 2 };
                           const end = el.style?.end ?? { x: el.x + el.width, y: el.y + el.height / 2 };
-                          const minX = Math.min(start.x, end.x);
-                          const minY = Math.min(start.y, end.y);
-                          const rawWidth = Math.max(Math.abs(end.x - start.x), 10);
-                          const rawHeight = Math.max(Math.abs(end.y - start.y), 10);
                           const borderWidth = el.style?.borderWidth ?? 1;
                           const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                          const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                          const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                          const newX = minX - strokePadding;
-                          const newY = minY - strokePadding;
-                          const newWidth = rawWidth + strokePadding * 2;
-                          const newHeight = rawHeight + strokePadding * 2;
+                          const bounds = computeLineBounds(start, end, newSl, borderWidth, hasArrow);
 
-                          updateLayer(pageIndex, el.id, { x: newX, y: newY, width: newWidth, height: newHeight, style: { ...el.style, sloppiness: newSl } });
+                          updateLayer(pageIndex, el.id, { ...bounds, style: { ...el.style, sloppiness: newSl } });
                         }
                       }}
                       onMouseDown={(e) => {
@@ -1285,35 +1253,20 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
                           }
 
                           if (mode === 'curve') {
-                            // Curve control: set sloppiness based on perpendicular distance from midpoint and expand bounds
+                            // Curve control: sloppiness from perpendicular distance to midpoint;
+                            // bounds expand via computeLineBounds to include the control point
                             const midX = (s.x + ept.x) / 2;
                             const midY = (s.y + ept.y) / 2;
                             const dmx = mouseX - midX;
                             const dmy = mouseY - midY;
                             const newSloppiness = dmx * nx + dmy * ny;
 
-                            const controlX = midX + nx * newSloppiness;
-                            const controlY = midY + ny * newSloppiness;
-                            const minX = Math.min(s.x, ept.x, controlX);
-                            const minY = Math.min(s.y, ept.y, controlY);
-                            const maxX = Math.max(s.x, ept.x, controlX);
-                            const maxY = Math.max(s.y, ept.y, controlY);
-                            const rawWidth = Math.max(Math.abs(maxX - minX), 10);
-                            const rawHeight = Math.max(Math.abs(maxY - minY), 10);
                             const borderWidth = el.style?.borderWidth ?? 1;
                             const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                            const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                            const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                            const paddedX = minX - strokePadding;
-                            const paddedY = minY - strokePadding;
-                            const paddedWidth = rawWidth + strokePadding * 2;
-                            const paddedHeight = rawHeight + strokePadding * 2;
+                            const bounds = computeLineBounds(s, ept, newSloppiness, borderWidth, hasArrow);
 
                             updateLayer(pageIndex, el.id, {
-                              x: paddedX,
-                              y: paddedY,
-                              width: paddedWidth,
-                              height: paddedHeight,
+                              ...bounds,
                               style: { ...el.style, sloppiness: newSloppiness }
                             });
                           } else {
@@ -1323,26 +1276,12 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
                             const newStart = { x: origStart.x + dx, y: origStart.y + dy };
                             const newEnd = { x: origEnd.x + dx, y: origEnd.y + dy };
-                            const minX = Math.min(newStart.x, newEnd.x);
-                            const minY = Math.min(newStart.y, newEnd.y);
-                            const rawWidth = Math.max(Math.abs(newEnd.x - newStart.x), 10);
-                            const rawHeight = Math.max(Math.abs(newEnd.y - newStart.y), 10);
-
-                            // Add padding for stroke and curve - ensure minimum padding (include arrow pad)
                             const borderWidth = el.style?.borderWidth ?? 1;
                             const hasArrow = !!(el.style?.arrowStart || el.style?.arrowEnd);
-                            const arrowPad = hasArrow ? borderWidth * 3 : 0;
-                            const strokePadding = Math.max(4, borderWidth * 1.5 + arrowPad);
-                            const newX = minX - strokePadding;
-                            const newY = minY - strokePadding;
-                            const newWidth = rawWidth + strokePadding * 2;
-                            const newHeight = rawHeight + strokePadding * 2;
+                            const bounds = computeLineBounds(newStart, newEnd, el.style?.sloppiness ?? 0, borderWidth, hasArrow);
 
                             updateLayer(pageIndex, el.id, {
-                              x: newX,
-                              y: newY,
-                              width: newWidth,
-                              height: newHeight,
+                              ...bounds,
                               style: { ...el.style, start: newStart, end: newEnd }
                             });
                           }
@@ -1415,22 +1354,17 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
             )}
             {el.type === 'text' && (
               <div
-                className="w-full h-full wrap-break-word outline-none"
+                className="w-full h-full wrap-break-word outline-none whitespace-pre-wrap"
                 data-inkoro-text
                 contentEditable={isTextEditing}
                 suppressContentEditableWarning
                 onBlur={handleBlur}
                 onInput={(e) => handleTextChange(e, el.id)}
-                onCompositionStart={() => { isComposingRef.current = true; }}
-                onCompositionEnd={(e) => {
-                  isComposingRef.current = false;
-                  const target = e.currentTarget as HTMLDivElement;
-                  const caretOffset = getCaretCharacterOffsetWithin(target);
-                  requestAnimationFrame(() => setCaretPosition(target, caretOffset));
-                }}
-                style={{ cursor: isTextEditing ? 'text' : 'inherit' }}
+                style={{ cursor: isTextEditing ? 'text' : 'inherit', userSelect: isTextEditing ? 'text' : 'none' }}
               >
-                {el.content}
+                {/* While editing, the browser owns the DOM — React re-rendering
+                    children here would clobber the caret and garble newlines */}
+                {isTextEditing ? null : el.content}
               </div>
             )}
           </div>
@@ -1439,6 +1373,7 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
 
       {selectedElement && targetRef.current && !isEditing && selectedElement.type !== 'line' && selectedElement.type !== 'arrow' && (
         <Moveable
+          ref={moveableRef}
           target={targetRef.current}
           resizable={true}
           draggable={true}

@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { useEditorStore } from './store';
+import { TEXT_LINE_HEIGHT, TEXT_PADDING_X, TEXT_PADDING_Y } from './text-metrics';
 
 export async function savePdf(opts?: {
   filename?: string;
@@ -61,24 +62,27 @@ export async function savePdf(opts?: {
         // drawRectangle: y is bottom-left corner.
 
         if (el.type === 'text') {
-          // Basic text
+          // Match the shared text-box model (lib/text-metrics.ts): padding, then
+          // first baseline at half-leading + Helvetica ascent below the padding.
           const fontSize = el.style.fontSize || 16;
-          // PDF Lib drawText y is baseline? No, it's bottom-left of text box roughly.
-          // To align Top-Left, y_pdf = pageHeight - y_store - fontSize (approx).
-          const y = pageHeight - el.y - fontSize;
+          const baselineFromTop = TEXT_PADDING_Y + fontSize * (0.15 + 0.718);
+          const lineStep = fontSize * TEXT_LINE_HEIGHT;
 
-          // Color parsing
-          // el.style.color might be hex.
           const color = hexToRgb(el.style.color || '#000000');
 
-          pdfPage.drawText(el.content || '', {
-            x,
-            y,
-            size: fontSize,
-            font: helveticaFont,
-            color,
-            // rotate: degrees(el.rotation), // Text rotation around which point? 
-            // PDF-lib rotates around origin (bottom-left of text start).
+          // pdf-lib drawText does not handle newlines — draw each line explicitly
+          const lines = (el.content || '').split('\n');
+          lines.forEach((line, i) => {
+            if (!line) return;
+            pdfPage.drawText(line, {
+              x: x + TEXT_PADDING_X,
+              y: pageHeight - el.y - baselineFromTop - i * lineStep,
+              size: fontSize,
+              font: helveticaFont,
+              color,
+              // rotate: degrees(el.rotation), // Text rotation around which point?
+              // PDF-lib rotates around origin (bottom-left of text start).
+            });
           });
         }
         else if (el.type === 'rect') {
