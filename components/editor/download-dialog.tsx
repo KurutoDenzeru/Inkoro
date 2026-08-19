@@ -28,9 +28,14 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useEditorStore } from "@/lib/store";
 import { savePdf } from "@/lib/pdf-utils";
-import { Download, ZoomIn, ZoomOut, FileText, Image, Settings2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Download, ZoomIn, ZoomOut, Maximize, FileText, Image, Settings2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { PreviewLayer } from "./preview-layer";
@@ -61,7 +66,12 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   // Preview state
   const [previewPage, setPreviewPage] = useState(1);
   const [previewZoom, setPreviewZoom] = useState(1);
+  const [previewPan, setPreviewPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
+  const panDragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+
+  const clampPreviewZoom = (z: number) => Math.min(3, Math.max(0.25, z));
 
   const STORAGE_KEY = "inkoro-download-metadata";
 
@@ -70,9 +80,54 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
     if (open) {
       setPreviewPage(1);
       setPreviewZoom(1);
+      setPreviewPan({ x: 0, y: 0 });
       setPdfLoadError(null);
     }
   }, [open]);
+
+  // Reset pan when the previewed page changes
+  useEffect(() => {
+    setPreviewPan({ x: 0, y: 0 });
+  }, [previewPage]);
+
+  // Ctrl/Cmd + scroll wheel zooms the preview. Attached via callback ref because
+  // the dialog portal mounts after this component's effects (ref is null there).
+  // Non-passive so preventDefault() blocks browser page-zoom.
+  const wheelCleanupRef = useRef<(() => void) | null>(null);
+  const handlePreviewContainerRef = useCallback((node: HTMLDivElement | null) => {
+    wheelCleanupRef.current?.();
+    wheelCleanupRef.current = null;
+    if (!node) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setPreviewZoom((z) => clampPreviewZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)));
+    };
+    node.addEventListener("wheel", onWheel, { passive: false });
+    wheelCleanupRef.current = () => node.removeEventListener("wheel", onWheel);
+  }, []);
+
+  // Click-and-drag panning for the zoomed preview
+  const handlePreviewPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    panDragRef.current = { startX: e.clientX, startY: e.clientY, baseX: previewPan.x, baseY: previewPan.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsPanning(true);
+  };
+
+  const handlePreviewPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = panDragRef.current;
+    if (!drag) return;
+    setPreviewPan({
+      x: drag.baseX + (e.clientX - drag.startX),
+      y: drag.baseY + (e.clientY - drag.startY),
+    });
+  };
+
+  const handlePreviewPointerUp = () => {
+    panDragRef.current = null;
+    setIsPanning(false);
+  };
 
   // Prefill metadata when dialog opens
   useEffect(() => {
@@ -243,15 +298,26 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
 
               {/* Preview Canvas */}
               <div
-                className="flex-1 overflow-hidden relative"
+                ref={handlePreviewContainerRef}
+                className={cn(
+                  "flex-1 overflow-hidden relative select-none touch-none",
+                  isPanning ? "cursor-grabbing" : "cursor-grab"
+                )}
                 style={checkerboardStyle}
+                onPointerDown={handlePreviewPointerDown}
+                onPointerMove={handlePreviewPointerMove}
+                onPointerUp={handlePreviewPointerUp}
+                onPointerCancel={handlePreviewPointerUp}
               >
                 <div className="flex items-center justify-center h-full p-6">
                   {pdfFile ? (
                     <div
-                      className="bg-white shadow-2xl transition-transform duration-200 max-h-full max-w-full"
+                      className={cn(
+                        "bg-white shadow-2xl max-h-full max-w-full",
+                        !isPanning && "transition-transform duration-200"
+                      )}
                       style={{
-                        transform: `scale(${previewZoom})`,
+                        transform: `translate(${previewPan.x}px, ${previewPan.y}px) scale(${previewZoom})`,
                         transformOrigin: "center center",
                       }}
                     >
@@ -294,47 +360,101 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               {pdfFile && numPages > 0 && (
                 <div className="flex items-center justify-between px-4 py-2 border-t bg-card">
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
-                      disabled={previewPage <= 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Previous page"
+                            onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
+                            disabled={previewPage <= 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Previous page</TooltipContent>
+                    </Tooltip>
                     <span className="text-xs tabular-nums min-w-[80px] text-center">
                       Page {previewPage} of {numPages}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setPreviewPage(Math.min(numPages, previewPage + 1))}
-                      disabled={previewPage >= numPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Next page"
+                            onClick={() => setPreviewPage(Math.min(numPages, previewPage + 1))}
+                            disabled={previewPage >= numPages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Next page</TooltipContent>
+                    </Tooltip>
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setPreviewZoom((z) => Math.max(0.25, z - 0.25))}
-                      disabled={previewZoom <= 0.25}
-                    >
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
+                    <span className="text-[10px] text-muted-foreground mr-1 hidden lg:inline">
+                      Ctrl+Scroll to zoom · Drag to pan
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Zoom out"
+                            onClick={() => setPreviewZoom((z) => clampPreviewZoom(z - 0.25))}
+                            disabled={previewZoom <= 0.25}
+                          >
+                            <ZoomOut className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Zoom out</TooltipContent>
+                    </Tooltip>
                     <Badge variant="secondary" className="text-xs tabular-nums min-w-[50px] justify-center">
                       {Math.round(previewZoom * 100)}%
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setPreviewZoom((z) => Math.min(3, z + 0.25))}
-                      disabled={previewZoom >= 3}
-                    >
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Zoom in"
+                            onClick={() => setPreviewZoom((z) => clampPreviewZoom(z + 0.25))}
+                            disabled={previewZoom >= 3}
+                          >
+                            <ZoomIn className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Zoom in</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Fit to view"
+                            onClick={() => {
+                              setPreviewZoom(1);
+                              setPreviewPan({ x: 0, y: 0 });
+                            }}
+                            disabled={previewZoom === 1 && previewPan.x === 0 && previewPan.y === 0}
+                          >
+                            <Maximize className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Fit to view</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               )}
@@ -357,7 +477,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                         key={f}
                         onClick={() => setFormat(f)}
                         className={cn(
-                          "px-3 py-2 text-xs font-medium uppercase tracking-wide transition-colors",
+                          "px-3 py-2 text-xs font-medium uppercase tracking-wide transition-colors cursor-pointer",
                           format === f
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -635,7 +755,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                 key={f}
                 onClick={() => setFormat(f)}
                 className={cn(
-                  "px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition-colors",
+                  "px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition-colors cursor-pointer",
                   format === f
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
