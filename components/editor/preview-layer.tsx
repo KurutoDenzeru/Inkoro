@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditorStore, PDFElement } from "@/lib/store";
+import { TEXT_LINE_HEIGHT, TEXT_PADDING_X, TEXT_PADDING_Y } from "@/lib/text-metrics";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -63,8 +64,8 @@ function PreviewElement({ element, scale }: { element: PDFElement; scale: number
             textDecoration: style.textDecoration || "none",
             textAlign: style.textAlign || "left",
             backgroundColor: style.backgroundColor || "transparent",
-            padding: "2px 4px",
-            lineHeight: 1.2,
+            padding: `${TEXT_PADDING_Y * scale}px ${TEXT_PADDING_X * scale}px`,
+            lineHeight: TEXT_LINE_HEIGHT,
             wordBreak: "break-word",
             overflow: "hidden",
           }}
