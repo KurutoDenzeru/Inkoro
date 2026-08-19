@@ -418,12 +418,17 @@ export function CanvasLayer({ pageIndex, scale }: CanvasLayerProps) {
       const cbEvent = e as ClipboardEvent;
       if (!cbEvent.clipboardData) return;
 
-      e.preventDefault();
+      // If paste targets an input or editable area, let the browser handle it.
+      // Must run before preventDefault(), which cancels the default insertion.
+      const targetEl = cbEvent.target as HTMLElement | null;
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isEditable = (el: HTMLElement | null) => {
+        const tag = el?.tagName?.toLowerCase();
+        return tag === 'input' || tag === 'textarea' || !!el?.isContentEditable;
+      };
+      if (isEditable(targetEl) || isEditable(activeEl)) return;
 
-      // If focus is in an input or editable area, don't override normal paste
-      const activeTag = document.activeElement?.tagName?.toLowerCase();
-      const activeIsEditable = (document.activeElement as HTMLElement)?.isContentEditable;
-      if (activeTag === 'input' || activeTag === 'textarea' || activeIsEditable) return;
+      e.preventDefault();
 
       // Files (images) first
       const files = Array.from(cbEvent.clipboardData.files || []);
