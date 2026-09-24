@@ -43,9 +43,14 @@ import { PreviewLayer } from "./preview-layer";
 interface DownloadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMakeFillable?: boolean;
 }
 
-export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
+export function DownloadDialog({
+  open,
+  onOpenChange,
+  initialMakeFillable = false,
+}: DownloadDialogProps) {
   const { pdfFile, numPages, currentPage, pageDimensions } = useEditorStore();
   const isMobile = useIsMobile();
 
@@ -83,8 +88,9 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
       setPreviewZoom(1);
       setPreviewPan({ x: 0, y: 0 });
       setPdfLoadError(null);
+      setMakeFillable(initialMakeFillable);
     }
-  }, [open]);
+  }, [initialMakeFillable, open]);
 
   // Reset pan when the previewed page changes
   useEffect(() => {

@@ -19,7 +19,8 @@ import {
   MoreVertical,
   Settings2,
   Copy,
-  Clipboard
+  Clipboard,
+  FilePenLine
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -82,6 +83,12 @@ export function Toolbar() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [initialMakeFillable, setInitialMakeFillable] = useState(false);
+
+  const openDownloadDialog = (makeFillable = false) => {
+    setInitialMakeFillable(makeFillable);
+    setDownloadDialogOpen(true);
+  };
 
   const handleZoomIn = () => setScale(Math.min(scale + 0.1, 3));
   const handleZoomOut = () => setScale(Math.max(scale - 0.1, 0.5));
@@ -523,13 +530,26 @@ export function Toolbar() {
           <TooltipTrigger
             render={(props) => <button {...props} />}
             className={cn(iconButtonClass(false), "hidden sm:flex")}
-            onClick={() => setDownloadDialogOpen(true)}
+            onClick={() => openDownloadDialog()}
             title="Export"
             aria-label="Export document"
           >
             <Download className="h-4 w-4" />
           </TooltipTrigger>
           <TooltipContent>Export</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => <button {...props} />}
+            className={cn(iconButtonClass(false), "hidden sm:flex")}
+            onClick={() => openDownloadDialog(true)}
+            title="Make first page fillable"
+            aria-label="Make first page fillable"
+          >
+            <FilePenLine className="h-4 w-4" />
+          </TooltipTrigger>
+          <TooltipContent>Make first page fillable</TooltipContent>
         </Tooltip>
 
         {/* Mobile: Show dropdown menu with controls */}
@@ -610,9 +630,14 @@ export function Toolbar() {
             <div className="h-px bg-border" />
 
             {/* Export */}
-            <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => openDownloadDialog()}>
               <Download className="h-4 w-4 mr-2" />
               Export
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => openDownloadDialog(true)}>
+              <FilePenLine className="h-4 w-4 mr-2" />
+              Make first page fillable
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -643,7 +668,11 @@ export function Toolbar() {
 
         <ImageDialog open={imageDialogOpen} onOpenChange={setImageDialogOpen} />
         <SignatureDialog open={signatureDialogOpen} onOpenChange={setSignatureDialogOpen} />
-        <DownloadDialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen} />
+        <DownloadDialog
+          initialMakeFillable={initialMakeFillable}
+          open={downloadDialogOpen}
+          onOpenChange={setDownloadDialogOpen}
+        />
       </div>
     </TooltipProvider>
   );
