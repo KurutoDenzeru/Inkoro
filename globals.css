@@ -172,6 +172,7 @@
   background: rgba(255, 255, 255, 0.92) !important;
   border: 1px solid rgba(37, 99, 235, 0.42) !important;
   color-scheme: light;
+  position: relative;
 }
 
 #pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:checked {
@@ -179,8 +180,25 @@
   border-color: rgba(37, 99, 235, 0.68) !important;
 }
 
-#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::before,
-#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::after,
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::before {
+  display: none !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::after {
+  background: transparent !important;
+  border-bottom: 2px solid #1e3a8a !important;
+  border-right: 2px solid #1e3a8a !important;
+  content: "" !important;
+  display: block !important;
+  height: 68% !important;
+  left: 28% !important;
+  position: absolute !important;
+  top: 8% !important;
+  transform: rotate(45deg) !important;
+  transform-origin: center !important;
+  width: 42% !important;
+}
+
 #pdf-page-container .annotationLayer .buttonWidgetAnnotation.radioButton input:checked::before {
   background-color: #1e3a8a !important;
 }
