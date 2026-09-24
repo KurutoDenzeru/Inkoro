@@ -151,6 +151,10 @@
   display: block;
 }
 
+#pdf-page-container .react-pdf__Page__annotations {
+  z-index: 30;
+}
+
 /* Utility to hide scrollbars for overflow containers (used by toolbar on mobile) */
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */

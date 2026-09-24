@@ -34,6 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useEditorStore } from "@/lib/store";
+import { getFilledPdfBytes } from "@/lib/pdf-runtime";
 import { savePdf } from "@/lib/pdf-utils";
 import { Download, ZoomIn, ZoomOut, Maximize, FileText, Image, Settings2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,14 +44,9 @@ import { PreviewLayer } from "./preview-layer";
 interface DownloadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialMakeFillable?: boolean;
 }
 
-export function DownloadDialog({
-  open,
-  onOpenChange,
-  initialMakeFillable = false,
-}: DownloadDialogProps) {
+export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   const { pdfFile, numPages, currentPage, pageDimensions } = useEditorStore();
   const isMobile = useIsMobile();
 
@@ -60,7 +56,6 @@ export function DownloadDialog({
   const [quality, setQuality] = useState(90);
   const [scale, setScale] = useState(2);
   const [includeAnnotations, setIncludeAnnotations] = useState(true);
-  const [makeFillable, setMakeFillable] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Metadata fields
@@ -88,9 +83,8 @@ export function DownloadDialog({
       setPreviewZoom(1);
       setPreviewPan({ x: 0, y: 0 });
       setPdfLoadError(null);
-      setMakeFillable(initialMakeFillable);
     }
-  }, [initialMakeFillable, open]);
+  }, [open]);
 
   // Reset pan when the previewed page changes
   useEffect(() => {
@@ -231,6 +225,7 @@ export function DownloadDialog({
         /* ignore storage errors */
       }
 
+      const sourceBytes = format === "pdf" ? await getFilledPdfBytes() : null;
       const bytes = (await savePdf({
         filename,
         title: title || undefined,
@@ -238,7 +233,7 @@ export function DownloadDialog({
         subject: subject || undefined,
         keywords: keywordsArray.length ? keywordsArray : undefined,
         returnBytes: true,
-        fillable: format === "pdf" && makeFillable,
+        sourceBytes: sourceBytes ?? undefined,
       })) as Uint8Array | undefined;
 
       if (!bytes) throw new Error("Failed to generate PDF");
@@ -566,21 +561,6 @@ export function DownloadDialog({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="fillable" className="cursor-pointer">
-                    Make first page fillable
-                  </Label>
-                  <Switch
-                    id="fillable"
-                    checked={makeFillable}
-                    onCheckedChange={setMakeFillable}
-                    disabled={format !== "pdf"}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Add reviewer fields to page one of the exported PDF.
-                </p>
-
                 <Separator />
 
                 {/* Metadata Section */}
@@ -650,7 +630,7 @@ export function DownloadDialog({
                   ) : (
                     <>
                       <Download className="h-4 w-4 mr-2" />
-                      Export {format.toUpperCase()}{format === "pdf" && makeFillable ? " FILLABLE" : ""}
+                      Export {format.toUpperCase()}
                     </>
                   )}
                 </Button>
@@ -852,21 +832,6 @@ export function DownloadDialog({
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="fillable-mobile" className="cursor-pointer">
-                Make first page fillable
-              </Label>
-              <Switch
-                id="fillable-mobile"
-                checked={makeFillable}
-                onCheckedChange={setMakeFillable}
-                disabled={format !== "pdf"}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Add reviewer fields to page one of the exported PDF.
-            </p>
-
             <Separator />
 
             {/* Metadata */}
@@ -936,7 +901,7 @@ export function DownloadDialog({
               ) : (
                 <>
                   <Download className="h-4 w-4 mr-2" />
-                  Export {format.toUpperCase()}{format === "pdf" && makeFillable ? " FILLABLE" : ""}
+                  Export {format.toUpperCase()}
                 </>
               )}
             </Button>

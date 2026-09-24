@@ -1,137 +1,6 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
-import type { PDFPage, PDFFont } from 'pdf-lib';
 import { useEditorStore } from './store';
 import { TEXT_LINE_HEIGHT, TEXT_PADDING_X, TEXT_PADDING_Y } from './text-metrics';
-
-const addFillableReviewFields = (pdfDoc: PDFDocument, page: PDFPage, font: PDFFont) => {
-  const pageWidth = page.getWidth();
-  const pageHeight = page.getHeight();
-  const margin = 24;
-  const panelHeight = 250;
-  const panelY = margin;
-  const panelWidth = pageWidth - margin * 2;
-
-  if (panelWidth <= 0 || pageHeight <= panelHeight + margin * 2) {
-    return;
-  }
-
-  const contentX = margin + 14;
-  const contentWidth = panelWidth - 28;
-  const columnGap = 12;
-  const columnWidth = (contentWidth - columnGap) / 2;
-  const rightX = contentX + columnWidth + columnGap;
-  const labelColor = rgb(0.32, 0.32, 0.34);
-  const borderColor = rgb(0.78, 0.78, 0.8);
-  const fieldBackground = rgb(1, 1, 1);
-  const textColor = rgb(0.12, 0.12, 0.14);
-  const form = pdfDoc.getForm();
-  const existingFieldNames = new Set(form.getFields().map((field) => field.getName()));
-  const getUniqueFieldName = (baseName: string) => {
-    let fieldName = baseName;
-    let suffix = 2;
-    while (existingFieldNames.has(fieldName)) {
-      fieldName = `${baseName}${suffix}`;
-      suffix += 1;
-    }
-    existingFieldNames.add(fieldName);
-    return fieldName;
-  };
-  const fieldOptions = {
-    backgroundColor: fieldBackground,
-    borderColor,
-    borderWidth: 1,
-    font,
-    textColor,
-  } as const;
-
-  page.drawRectangle({
-    x: margin,
-    y: panelY,
-    width: panelWidth,
-    height: panelHeight,
-    color: rgb(0.98, 0.98, 0.99),
-    borderColor,
-    borderWidth: 1,
-    opacity: 0.97,
-  });
-  page.drawText('Inkoro review', {
-    x: contentX,
-    y: panelY + panelHeight - 24,
-    size: 14,
-    font,
-    color: textColor,
-  });
-  page.drawText('Complete this section after reviewing the document.', {
-    x: contentX,
-    y: panelY + panelHeight - 40,
-    size: 8,
-    font,
-    color: labelColor,
-  });
-
-  page.drawText('Reviewer name', { x: contentX, y: panelY + 194, size: 8, font, color: labelColor });
-  page.drawText('Review date', { x: rightX, y: panelY + 194, size: 8, font, color: labelColor });
-  const reviewerField = form.createTextField(getUniqueFieldName('inkoro.review.reviewerName'));
-  reviewerField.addToPage(page, {
-    ...fieldOptions,
-    x: contentX,
-    y: panelY + 172,
-    width: columnWidth,
-    height: 18,
-  });
-  const dateField = form.createTextField(getUniqueFieldName('inkoro.review.reviewDate'));
-  dateField.addToPage(page, {
-    ...fieldOptions,
-    x: rightX,
-    y: panelY + 172,
-    width: columnWidth,
-    height: 18,
-  });
-
-  page.drawText('Review status', { x: contentX, y: panelY + 140, size: 8, font, color: labelColor });
-  const statusField = form.createDropdown(getUniqueFieldName('inkoro.review.status'));
-  statusField.setOptions(['Select...', 'Approved', 'Changes requested', 'Needs discussion']);
-  statusField.select('Select...');
-  statusField.addToPage(page, {
-    ...fieldOptions,
-    x: contentX,
-    y: panelY + 118,
-    width: contentWidth,
-    height: 18,
-  });
-
-  const checklistField = form.createCheckBox(getUniqueFieldName('inkoro.review.reviewedAllAnnotations'));
-  checklistField.addToPage(page, {
-    backgroundColor: fieldBackground,
-    borderColor,
-    borderWidth: 1,
-    height: 14,
-    textColor,
-    width: 14,
-    x: contentX,
-    y: panelY + 84,
-  });
-  page.drawText('I reviewed all annotations in this document.', {
-    x: contentX + 21,
-    y: panelY + 88,
-    size: 8,
-    font,
-    color: labelColor,
-  });
-
-  page.drawText('Comments', { x: contentX, y: panelY + 62, size: 8, font, color: labelColor });
-  const commentsField = form.createTextField(getUniqueFieldName('inkoro.review.comments'));
-  commentsField.enableMultiline();
-  commentsField.setMaxLength(500);
-  commentsField.addToPage(page, {
-    ...fieldOptions,
-    x: contentX,
-    y: panelY + 28,
-    width: contentWidth,
-    height: 28,
-  });
-
-};
 
 export async function savePdf(opts?: {
   filename?: string;
@@ -140,13 +9,13 @@ export async function savePdf(opts?: {
   subject?: string;
   keywords?: string[];
   returnBytes?: boolean;
-  fillable?: boolean;
+  sourceBytes?: Uint8Array;
 }): Promise<void | Uint8Array> {
   const { pdfFile, layers, pageDimensions } = useEditorStore.getState();
   if (!pdfFile) return;
 
   try {
-    const fileBuffer = await pdfFile.arrayBuffer();
+    const fileBuffer = opts?.sourceBytes ?? await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(fileBuffer);
 
     // Apply metadata (if provided)
@@ -345,10 +214,6 @@ export async function savePdf(opts?: {
           });
         }
       }
-    }
-
-    if (opts?.fillable && pages[0]) {
-      addFillableReviewFields(pdfDoc, pages[0], helveticaFont);
     }
 
     const pdfBytes = await pdfDoc.save();
