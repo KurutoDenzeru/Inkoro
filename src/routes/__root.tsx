@@ -4,6 +4,7 @@ import {
   Outlet,
   createRootRoute,
   HeadContent,
+  Link,
   Scripts,
 } from '@tanstack/react-router'
 import '@fontsource-variable/inter'
@@ -47,7 +48,22 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  notFoundComponent: NotFoundComponent,
 })
+
+function NotFoundComponent() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <div className="flex max-w-md flex-col items-center gap-4 text-center">
+        <h1 className="text-2xl font-semibold">Page not found</h1>
+        <p className="text-sm text-muted-foreground">The requested page does not exist.</p>
+        <Link to="/" className="text-sm text-primary underline-offset-4 hover:underline">
+          Return to editor
+        </Link>
+      </div>
+    </main>
+  )
+}
 
 function RootComponent() {
   const jsonLd = {

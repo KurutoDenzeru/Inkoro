@@ -151,6 +151,73 @@
   display: block;
 }
 
+#pdf-page-container .react-pdf__Page__annotations {
+  --annotation-unfocused-field-background: none;
+  --input-unfocused-border-color: rgba(37, 99, 235, 0.16);
+  --input-focus-border-color: rgba(37, 99, 235, 0.58);
+  --input-focus-outline: none;
+  color-scheme: light;
+  z-index: 30;
+}
+
+#pdf-page-container .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select) {
+  background: rgba(37, 99, 235, 0.035) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  border-radius: 2px;
+  color: #1e3a8a;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
+  accent-color: #2563eb;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(37, 99, 235, 0.42) !important;
+  color-scheme: light;
+  position: relative;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:checked {
+  background: rgba(37, 99, 235, 0.14) !important;
+  border-color: rgba(37, 99, 235, 0.68) !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::before {
+  display: none !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::after {
+  background: transparent !important;
+  border-bottom: 2px solid #1e3a8a !important;
+  border-right: 2px solid #1e3a8a !important;
+  content: "" !important;
+  display: block !important;
+  height: 68% !important;
+  left: 28% !important;
+  position: absolute !important;
+  top: 8% !important;
+  transform: rotate(45deg) !important;
+  transform-origin: center !important;
+  width: 42% !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.radioButton input:checked::before {
+  background-color: #1e3a8a !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:focus {
+  outline: 1px solid rgba(37, 99, 235, 0.32);
+  outline-offset: 1px;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:disabled {
+  opacity: 0.55;
+}
+
+#pdf-page-container .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select):focus {
+  background: rgba(37, 99, 235, 0.07) !important;
+  border-color: rgba(37, 99, 235, 0.58) !important;
+  outline: 1px solid rgba(37, 99, 235, 0.2);
+}
+
 /* Utility to hide scrollbars for overflow containers (used by toolbar on mobile) */
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */

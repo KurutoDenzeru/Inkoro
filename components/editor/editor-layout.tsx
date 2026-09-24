@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { DownloadDialog } from "./download-dialog";
+import { AnnotationReportDialog } from "./annotation-report-dialog";
 import { AboutDialog } from "@/components/ui/about-dialog";
 import { useDialogStore } from "@/hooks/use-dialogs";
 import { useTheme } from "next-themes";
@@ -334,6 +335,7 @@ function SidebarShortcutListener() {
 export function EditorLayout() {
   const { pdfFile } = useEditorStore();
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   // Canvas panning state (spacebar + drag)
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
@@ -465,6 +467,14 @@ export function EditorLayout() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => setReportDialogOpen(true)}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Annotation report
+              </Button>
             </div>
           </SidebarFooter>
         </Sidebar>
@@ -502,6 +512,7 @@ export function EditorLayout() {
           <PropertiesPanel />
           <UploadDialog />
           <DownloadDialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen} />
+          <AnnotationReportDialog open={reportDialogOpen} onOpenChange={setReportDialogOpen} />
           <AboutDialog />
         </main>
       </div>

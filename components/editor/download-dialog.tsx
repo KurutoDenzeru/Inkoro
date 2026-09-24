@@ -34,6 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useEditorStore } from "@/lib/store";
+import { getFilledPdfBytes } from "@/lib/pdf-runtime";
 import { savePdf } from "@/lib/pdf-utils";
 import { Download, ZoomIn, ZoomOut, Maximize, FileText, Image, Settings2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -67,6 +68,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   const [previewPage, setPreviewPage] = useState(1);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewPan, setPreviewPan] = useState({ x: 0, y: 0 });
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
   const panDragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
@@ -84,6 +86,36 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
       setPdfLoadError(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    if (!open) {
+      setPreviewUrl(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setPreviewUrl(null);
+    getFilledPdfBytes()
+      .then((bytes) => {
+        if (cancelled || !bytes) return;
+        const buffer = new ArrayBuffer(bytes.byteLength);
+        new Uint8Array(buffer).set(bytes);
+        objectUrl = URL.createObjectURL(new Blob([buffer], { type: "application/pdf" }));
+        setPreviewUrl(objectUrl);
+      })
+      .catch(() => {
+        // Fall back to the original PDF when PDF.js cannot serialize the form.
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [open, pdfFile]);
 
   // Reset pan when the previewed page changes
   useEffect(() => {
@@ -224,6 +256,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
         /* ignore storage errors */
       }
 
+      const sourceBytes = format === "pdf" ? await getFilledPdfBytes() : null;
       const bytes = (await savePdf({
         filename,
         title: title || undefined,
@@ -231,6 +264,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
         subject: subject || undefined,
         keywords: keywordsArray.length ? keywordsArray : undefined,
         returnBytes: true,
+        sourceBytes: sourceBytes ?? undefined,
       })) as Uint8Array | undefined;
 
       if (!bytes) throw new Error("Failed to generate PDF");
@@ -260,6 +294,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   }, []);
 
   const pageDim = pageDimensions[previewPage];
+  const previewSource = previewUrl ?? pdfFile;
   const previewWidth = pageDim ? pageDim.width : 612;
 
   // Checkerboard pattern for preview background
@@ -322,7 +357,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                       }}
                     >
                       <Document
-                        file={pdfFile}
+                        file={previewSource}
                         onLoadSuccess={onDocumentLoadSuccess}
                         onLoadError={onDocumentLoadError}
                         loading={
@@ -686,7 +721,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                   }}
                 >
                   <Document
-                    file={pdfFile}
+                    file={previewSource}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={

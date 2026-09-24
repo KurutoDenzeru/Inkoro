@@ -9,12 +9,13 @@ export async function savePdf(opts?: {
   subject?: string;
   keywords?: string[];
   returnBytes?: boolean;
+  sourceBytes?: Uint8Array;
 }): Promise<void | Uint8Array> {
   const { pdfFile, layers, pageDimensions } = useEditorStore.getState();
   if (!pdfFile) return;
 
   try {
-    const fileBuffer = await pdfFile.arrayBuffer();
+    const fileBuffer = opts?.sourceBytes ?? await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(fileBuffer);
 
     // Apply metadata (if provided)

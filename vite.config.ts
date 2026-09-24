@@ -11,7 +11,7 @@ export default defineConfig({
   },
   plugins: [
     tanstackStart(),
-    devtools(),
+    devtools({ injectSource: { enabled: false } }),
     nitro(),
     viteReact(),
     tailwindcss(),

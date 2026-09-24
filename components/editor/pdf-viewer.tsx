@@ -1,8 +1,10 @@
 'use client';
 
 import { useEditorStore } from '@/lib/store';
+import { setActivePdfDocument } from '@/lib/pdf-runtime';
 import { useCallback, useEffect, useState } from 'react';
 import { Document, Page } from 'react-pdf';
+import type { OnDocumentLoadSuccess } from 'react-pdf/dist/shared/types.js';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '@/lib/pdf-setup'; // Ensure worker is set
@@ -16,9 +18,15 @@ export function PDFViewer() {
   const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const isMobile = useIsMobile();
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = useCallback<OnDocumentLoadSuccess>((pdf) => {
+    setActivePdfDocument(pdf);
+    setNumPages(pdf.numPages);
   }, [setNumPages]);
+
+  useEffect(() => {
+    setActivePdfDocument(null);
+    return () => setActivePdfDocument(null);
+  }, [pdfFile]);
 
   // Resize observer to track container width (for responsive mobile rendering)
   useEffect(() => {
@@ -60,7 +68,8 @@ export function PDFViewer() {
             // On mobile we pass width so PDF is rendered to fit the container; desktop uses direct scale
             {...(renderWidth ? { width: renderWidth } : { scale })}
             className="bg-white mb-0"
-            renderAnnotationLayer={false}
+            renderAnnotationLayer={true}
+            renderForms={true}
             renderTextLayer={true}
             onLoadSuccess={({ originalWidth, originalHeight }) => {
               setPageDimensions(currentPage, originalWidth, originalHeight);
