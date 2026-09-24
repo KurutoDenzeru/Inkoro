@@ -152,7 +152,30 @@
 }
 
 #pdf-page-container .react-pdf__Page__annotations {
+  --annotation-unfocused-field-background: none;
+  --input-unfocused-border-color: rgba(37, 99, 235, 0.16);
+  --input-focus-border-color: rgba(37, 99, 235, 0.58);
+  --input-focus-outline: none;
   z-index: 30;
+}
+
+#pdf-page-container .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select) {
+  background: rgba(37, 99, 235, 0.035) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  border-radius: 2px;
+  color: #1e3a8a;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
+  accent-color: #2563eb;
+  background: rgba(37, 99, 235, 0.035) !important;
+  border-color: rgba(37, 99, 235, 0.24) !important;
+}
+
+#pdf-page-container .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select):focus {
+  background: rgba(37, 99, 235, 0.07) !important;
+  border-color: rgba(37, 99, 235, 0.58) !important;
+  outline: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 /* Utility to hide scrollbars for overflow containers (used by toolbar on mobile) */
