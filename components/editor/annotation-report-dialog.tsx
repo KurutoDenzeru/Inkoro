@@ -3,6 +3,14 @@
 import { useMemo, useState } from "react";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +22,7 @@ import {
 import {
   buildAnnotationReportData,
   renderAnnotationReport,
+  type AnnotationReportPreset,
 } from "@/components/pdf/annotation-report";
 import { useEditorStore } from "@/lib/store";
 
@@ -22,6 +31,24 @@ interface AnnotationReportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const presetDetails: Record<
+  AnnotationReportPreset,
+  { label: string; description: string }
+> = {
+  accessible: {
+    description: "PDF/UA structure, document language, bookmarks, and accessible headings.",
+    label: "Accessible PDF/UA",
+  },
+  archival: {
+    description: "PDF/A-3b archival output with embedded session data and the source PDF.",
+    label: "Archival PDF/A",
+  },
+  standard: {
+    description: "A compact report with a chart, QR code, metadata, and page navigation.",
+    label: "Standard PDF",
+  },
+};
+
 export function AnnotationReportDialog({
   open,
   onOpenChange,
@@ -29,9 +56,16 @@ export function AnnotationReportDialog({
   const { pdfFile, numPages, layers } = useEditorStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preset, setPreset] = useState<AnnotationReportPreset>("standard");
   const report = useMemo(
-    () => buildAnnotationReportData(pdfFile, numPages, layers),
-    [layers, numPages, pdfFile]
+    () =>
+      buildAnnotationReportData(
+        pdfFile,
+        numPages,
+        layers,
+        typeof window === "undefined" ? undefined : window.location.href,
+      ),
+    [layers, numPages, pdfFile],
   );
 
   const handleDownload = async () => {
@@ -39,14 +73,14 @@ export function AnnotationReportDialog({
     setIsGenerating(true);
 
     try {
-      const bytes = await renderAnnotationReport(report);
+      const bytes = await renderAnnotationReport(report, { preset });
       const pdfBuffer = new ArrayBuffer(bytes.byteLength);
       new Uint8Array(pdfBuffer).set(bytes);
       const blob = new Blob([pdfBuffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "inkoro-annotation-report.pdf";
+      link.download = `inkoro-annotation-report-${preset}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -80,6 +114,34 @@ export function AnnotationReportDialog({
             <p className="text-xs text-muted-foreground">Annotations</p>
             <p className="mt-1 text-sm font-medium">{report.totalAnnotations}</p>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="annotation-report-preset">Export profile</Label>
+          <Select
+            value={preset}
+            onValueChange={(value) => {
+              if (
+                value === "standard" ||
+                value === "accessible" ||
+                value === "archival"
+              ) {
+                setPreset(value);
+              }
+            }}
+          >
+            <SelectTrigger id="annotation-report-preset" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(presetDetails) as AnnotationReportPreset[]).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {presetDetails[value].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{presetDetails[preset].description}</p>
         </div>
 
         {error ? (

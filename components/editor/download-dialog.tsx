@@ -55,6 +55,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   const [quality, setQuality] = useState(90);
   const [scale, setScale] = useState(2);
   const [includeAnnotations, setIncludeAnnotations] = useState(true);
+  const [makeFillable, setMakeFillable] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Metadata fields
@@ -231,6 +232,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
         subject: subject || undefined,
         keywords: keywordsArray.length ? keywordsArray : undefined,
         returnBytes: true,
+        fillable: format === "pdf" && makeFillable,
       })) as Uint8Array | undefined;
 
       if (!bytes) throw new Error("Failed to generate PDF");
@@ -558,6 +560,21 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="fillable" className="cursor-pointer">
+                    Make first page fillable
+                  </Label>
+                  <Switch
+                    id="fillable"
+                    checked={makeFillable}
+                    onCheckedChange={setMakeFillable}
+                    disabled={format !== "pdf"}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Add reviewer fields to page one of the exported PDF.
+                </p>
+
                 <Separator />
 
                 {/* Metadata Section */}
@@ -627,7 +644,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                   ) : (
                     <>
                       <Download className="h-4 w-4 mr-2" />
-                      Export {format.toUpperCase()}
+                      Export {format.toUpperCase()}{format === "pdf" && makeFillable ? " FILLABLE" : ""}
                     </>
                   )}
                 </Button>
@@ -829,6 +846,21 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               />
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label htmlFor="fillable-mobile" className="cursor-pointer">
+                Make first page fillable
+              </Label>
+              <Switch
+                id="fillable-mobile"
+                checked={makeFillable}
+                onCheckedChange={setMakeFillable}
+                disabled={format !== "pdf"}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Add reviewer fields to page one of the exported PDF.
+            </p>
+
             <Separator />
 
             {/* Metadata */}
@@ -898,7 +930,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
               ) : (
                 <>
                   <Download className="h-4 w-4 mr-2" />
-                  Export {format.toUpperCase()}
+                  Export {format.toUpperCase()}{format === "pdf" && makeFillable ? " FILLABLE" : ""}
                 </>
               )}
             </Button>
