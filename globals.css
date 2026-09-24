@@ -156,6 +156,7 @@
   --input-unfocused-border-color: rgba(37, 99, 235, 0.16);
   --input-focus-border-color: rgba(37, 99, 235, 0.58);
   --input-focus-outline: none;
+  color-scheme: light;
   z-index: 30;
 }
 
@@ -168,8 +169,29 @@
 
 #pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
   accent-color: #2563eb;
-  background: rgba(37, 99, 235, 0.035) !important;
-  border-color: rgba(37, 99, 235, 0.24) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(37, 99, 235, 0.42) !important;
+  color-scheme: light;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:checked {
+  background: rgba(37, 99, 235, 0.14) !important;
+  border-color: rgba(37, 99, 235, 0.68) !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::before,
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.checkBox input:checked::after,
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation.radioButton input:checked::before {
+  background-color: #1e3a8a !important;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:focus {
+  outline: 1px solid rgba(37, 99, 235, 0.32);
+  outline-offset: 1px;
+}
+
+#pdf-page-container .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:disabled {
+  opacity: 0.55;
 }
 
 #pdf-page-container .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select):focus {
