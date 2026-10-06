@@ -72,6 +72,11 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
   const panDragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const wheelNavRef = useRef({ acc: 0, last: 0 });
+  const numPagesRef = useRef(numPages);
+  useEffect(() => {
+    numPagesRef.current = numPages;
+  }, [numPages]);
 
   const clampPreviewZoom = (z: number) => Math.min(3, Math.max(0.25, z));
 
@@ -122,18 +127,37 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
     setPreviewPan({ x: 0, y: 0 });
   }, [previewPage]);
 
-  // Ctrl/Cmd + scroll wheel zooms the preview. Attached via callback ref because
-  // the dialog portal mounts after this component's effects (ref is null there).
-  // Non-passive so preventDefault() blocks browser page-zoom.
+  // Wheel over the preview: Ctrl/Cmd + scroll zooms, plain scroll flips to the
+  // next/previous page (like the Chrome/Adobe PDF viewers). Attached via callback
+  // ref because the dialog portal mounts after this component's effects. Non-passive
+  // so preventDefault() blocks browser page-zoom and background scroll.
   const wheelCleanupRef = useRef<(() => void) | null>(null);
   const handlePreviewContainerRef = useCallback((node: HTMLDivElement | null) => {
     wheelCleanupRef.current?.();
     wheelCleanupRef.current = null;
     if (!node) return;
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setPreviewZoom((z) => clampPreviewZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)));
+        return;
+      }
+      // Plain scroll: accumulate delta, flip a page past a threshold. The cooldown
+      // limits a fast swipe to one page so the reader doesn't skip ahead.
       e.preventDefault();
-      setPreviewZoom((z) => clampPreviewZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)));
+      const nav = wheelNavRef.current;
+      const now = performance.now();
+      nav.acc += e.deltaY;
+      if (now - nav.last < 250) return; // one page per gesture
+      if (Math.abs(nav.acc) < 120) return; // not enough travel to flip yet
+      const dir = nav.acc > 0 ? 1 : -1;
+      nav.acc = 0;
+      nav.last = now;
+      const last = numPagesRef.current;
+      setPreviewPage((p) => {
+        const next = p + dir;
+        return next < 1 || next > last ? p : next;
+      });
     };
     node.addEventListener("wheel", onWheel, { passive: false });
     wheelCleanupRef.current = () => node.removeEventListener("wheel", onWheel);
@@ -434,7 +458,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
 
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] text-muted-foreground mr-1 hidden lg:inline">
-                      Ctrl+Scroll to zoom · Drag to pan
+                      Scroll for next page · Ctrl+Scroll to zoom · Drag to pan
                     </span>
                     <Tooltip>
                       <TooltipTrigger
