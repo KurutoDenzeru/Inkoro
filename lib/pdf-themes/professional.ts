@@ -2,13 +2,7 @@ import type { PdfcnTheme } from "@/types/pdf-themes";
 
 import { defaultPrimitives } from "./primitives";
 
-/**
- * Professional theme preset.
- *
- * Character: Serif headings (Times-Roman), refined zinc/slate palette,
- * generous margins, formal document feel. shadcn-inspired minimal aesthetic.
- * Ideal for business documents, reports, and official correspondence.
- */
+/** Professional theme: serif headings, zinc palette, formal document feel. */
 export const professionalTheme: PdfcnTheme = {
   colors: {
     accent: "#3b82f6",

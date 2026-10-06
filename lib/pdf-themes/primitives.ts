@@ -1,18 +1,6 @@
 import type { PrimitiveTokens } from "@/types/pdf-themes";
 
-/**
- * Default primitive tokens shared by all theme presets.
- *
- * These define the raw design scales — the "palette" of values available.
- * Themes select from these scales when assigning semantic tokens.
- *
- * - Typography: Major Third (1.25) ratio, 12pt base
- * - Spacing: 4pt grid system
- * - Font weights: 400–700
- * - Line heights: 1.2–1.6
- * - Border radius: 0–8pt (plus full for pills)
- * - Letter spacing: -0.025 to 0.05 (em-like ratios for PDF points)
- */
+/** Default primitive design scales shared by all theme presets. */
 export const defaultPrimitives: PrimitiveTokens = {
   borderRadius: {
     full: 9999,

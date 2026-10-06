@@ -98,13 +98,7 @@ export interface PrimitiveTokens {
 }
 
 // ─── Semantic Tokens ────────────────────────────────────────────────────────
-// These map primitives to design intent. Themes differ primarily here.
-
-/**
- * Semantic color tokens using the foreground/background pair convention.
- * All values must be hex strings (e.g., '#1a1a1a').
- * react-pdf supports hex, rgb(), and hsl() — but NOT oklch.
- */
+/** Semantic color tokens. Hex strings only (react-pdf: hex/rgb/hsl, no oklch). */
 export interface ColorTokens {
   /** Primary text and content color */
   foreground: string;
@@ -190,31 +184,7 @@ export interface PageTokens {
 
 // ─── Full Theme ─────────────────────────────────────────────────────────────
 
-/**
- * The complete pdfcn theme object.
- *
- * Components import this and use its tokens for all style values.
- * Since React Context doesn't work in @react-pdf/renderer,
- * the theme is a plain TypeScript object imported directly by components.
- *
- * @example
- * ```tsx
- * // In a component:
- * import { theme } from '../lib/pdf-theme';
- *
- * function createStyles(t: PdfcnTheme) {
- *   return StyleSheet.create({
- *     text: {
- *       fontFamily: t.typography.body.fontFamily,
- *       fontSize: t.typography.body.fontSize,
- *       color: t.colors.foreground,
- *     },
- *   });
- * }
- *
- * const styles = createStyles(theme);
- * ```
- */
+/** Complete pdfcn theme object. Plain imported object — React Context unavailable in @react-pdf/renderer. */
 export interface PdfcnTheme {
   /** Theme name identifier */
   name: string;
