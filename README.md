@@ -2,7 +2,7 @@
 
 # 🪶 Inkoro - PDF Editor & Annotator
 
-🪶 Lightweight React + TypeScript PDF editor built with TanStack Start, react-pdf (pdf.js), pdf-lib, Tailwind, shadcn/ui, Zustand, dnd-kit, html2canvas, and react-moveable.
+🪶 Lightweight React + TypeScript PDF editor built with TanStack Start, react-pdf (pdf.js), pdf-lib, Takumi, Tailwind, shadcn/ui, Zustand, dnd-kit, html2canvas, and react-moveable.
 
 ## ☁️ Deploy your own
 
@@ -26,6 +26,7 @@
 - [react-pdf](https://github.com/wojtekmaj/react-pdf) + [pdfjs-dist (pdf.js)](https://www.jsdelivr.com/package/npm/pdfjs-dist): PDF rendering within the browser.
 - [pdf-lib](https://github.com/Hopding/pdf-lib): Client-side PDF creation and modification.
 - [Zustand](https://zustand.docs.pmnd.rs/): Minimal, fast, and scalable state management for React using simplified hooks.
+- [Takumi](https://takumi.kane.tw/): Server-rendered PDF engine (React JSX to paged PDF) powering the report exports.
 
 
 ## ⚡ Getting Started
