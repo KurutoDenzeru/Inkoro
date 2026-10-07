@@ -394,8 +394,9 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                           pageNumber={previewPage}
                           width={500}
                           className="bg-white"
-                          renderAnnotationLayer={false}
-                          renderTextLayer={false}
+                          renderAnnotationLayer={true}
+                          renderForms={true}
+                          renderTextLayer={true}
                         >
                           <PreviewLayer
                             pageIndex={previewPage}
@@ -758,8 +759,9 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
                       pageNumber={previewPage}
                       width={300}
                       className="bg-white"
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
+                      renderAnnotationLayer={true}
+                      renderForms={true}
+                      renderTextLayer={true}
                     >
                       <PreviewLayer
                         pageIndex={previewPage}
