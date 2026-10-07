@@ -8,9 +8,7 @@ import { DownloadDialog } from "./download-dialog";
 import { setActivePdfDocument } from "@/lib/pdf-runtime";
 import { useEditorStore } from "@/lib/store";
 
-// pdf.js evaluates a DOMMatrix at module scope. jsdom lacks it, so a minimal
-// stand-in keeps the module loadable. The export path never renders text, so
-// the stub transforms are never exercised.
+// pdf.js reads DOMMatrix at module scope, which jsdom lacks; stub it so the module loads.
 vi.hoisted(() => {
   vi.stubGlobal(
     "DOMMatrix",
@@ -45,18 +43,14 @@ vi.hoisted(() => {
     },
   );
 
-  // pdf.js uses Math.sumPrecise (a browser built-in) on the save path. The
-  // Node runtime lacks it, so a polyfill keeps serialization working. The
-  // sums are integer character counts, so reduce is exact.
+  // Node lacks Math.sumPrecise used on pdf.js's save path; polyfill it (integer char counts make reduce exact).
   const math = Math as unknown as Record<string, unknown>;
   if (typeof math.sumPrecise !== "function") {
     math.sumPrecise = (arr: number[]) => arr.reduce((acc, n) => acc + n, 0);
   }
 });
 
-// The PDF.js worker does not boot in jsdom. The Document mock runs the real
-// document pipeline synchronously on mount, mirroring how the app wires the
-// active document into the export runtime.
+// The PDF.js worker won't boot in jsdom, so the Document mock runs the real document pipeline synchronously on mount.
 const documentHooks = vi.hoisted(() => ({
   onLoadSuccess: null as ((data: { numPages: number }) => void) | null,
 }));
@@ -128,9 +122,7 @@ const seedStore = () => {
   });
 };
 
-// Single-page AcroForm covering every interactive widget type the editor
-// supports. /NeedAppearances is set so pdf.js saves filled fields without
-// appearance streams — the regression the export repair addresses.
+// Single-page AcroForm with every widget type; /NeedAppearances set so pdf.js saves values without appearance streams.
 const buildFixture = async (): Promise<Uint8Array> => {
   const doc = await PDFDocument.create();
   const page = doc.addPage([612, 792]);
@@ -174,9 +166,7 @@ describe("DownloadDialog", () => {
     const page = await pdf.getPage(1);
     const annots = await page.getAnnotations();
 
-    // Fill exactly as the rendered annotation layer does. Radio selection
-    // marks the chosen widget true and every other widget in the group false;
-    // here the second option (B) is selected.
+    // Fill as the rendered annotation layer does: radio selection marks the chosen widget true and the rest false (B is selected here).
     const setValue = (id: string, value: { value: unknown }) =>
       pdf.annotationStorage.setValue(id, value);
     for (const a of annots) {
@@ -196,10 +186,7 @@ describe("DownloadDialog", () => {
       }
     }
 
-    // Copy saveDocument()'s result into the test realm. pdf.js returns it
-    // from its own module realm, where the test realm's instanceof guard
-    // (used by pdf-lib) fails; the browser shares one realm, so this is a
-    // test-only shim.
+    // Copy saveDocument() bytes into the test realm (cross-realm instanceof guard in pdf-lib fails); a test-only shim, since the browser shares one realm.
     setActivePdfDocument({
       annotationStorage: pdf.annotationStorage,
       saveDocument: async () => new Uint8Array(await pdf.saveDocument()),
@@ -227,8 +214,7 @@ describe("DownloadDialog", () => {
     expect(form.getRadioGroup("radio").getSelected()).toBe("B");
     expect(form.getDropdown("drop").getSelected()).toEqual(["Three"]);
 
-    // Every widget carries an appearance stream, so the static preview and
-    // static viewers render the values instead of blank fields.
+    // Every widget carries an appearance stream so static viewers render the values.
     for (const name of ["plain", "multi", "pw", "check", "drop"]) {
       const widget = form.getField(name).acroField.getWidgets()[0];
       expect(widget.getAppearances(), `${name} widget has an AP`).toBeDefined();

@@ -24,13 +24,7 @@ export async function getFilledPdfBytes(): Promise<Uint8Array | null> {
 
   const bytes = await activePdfDocument.saveDocument();
 
-  // pdf.js only writes appearance streams it can generate itself. In
-  // documents with /NeedAppearances (or fonts it cannot encode), fields are
-  // saved with values but no appearance stream, so static renderers — the
-  // download preview and many viewers — show them blank. Regenerate the
-  // missing appearances so the exported file renders identically
-  // everywhere. If the repair cannot run, fall back to the raw serialized
-  // bytes.
+  // pdf.js drops appearance streams for /NeedAppearances docs, so regenerate missing ones or static viewers show blank fields; fall back to raw bytes if the repair fails.
   try {
     const doc = await PDFDocument.load(bytes);
     const form = doc.getForm();
@@ -41,8 +35,7 @@ export async function getFilledPdfBytes(): Promise<Uint8Array | null> {
           field.defaultUpdateAppearances(font);
         }
       } catch {
-        // pdf-lib only supports text fields, checkboxes, radios, dropdowns,
-        // and option lists; skip signature and other fields.
+        // pdf-lib only supports text/checkbox/radio/dropdown fields; skip the rest.
       }
     }
     return new Uint8Array(await doc.save());

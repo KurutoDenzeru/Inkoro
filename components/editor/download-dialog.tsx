@@ -127,10 +127,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
     setPreviewPan({ x: 0, y: 0 });
   }, [previewPage]);
 
-  // Wheel over the preview: Ctrl/Cmd + scroll zooms, plain scroll flips to the
-  // next/previous page (like the Chrome/Adobe PDF viewers). Attached via callback
-  // ref because the dialog portal mounts after this component's effects. Non-passive
-  // so preventDefault() blocks browser page-zoom and background scroll.
+  // Ctrl/Cmd+scroll zooms, plain scroll flips a page; attached via callback ref (portal mounts after effects) and non-passive so preventDefault works.
   const wheelCleanupRef = useRef<(() => void) | null>(null);
   const handlePreviewContainerRef = useCallback((node: HTMLDivElement | null) => {
     wheelCleanupRef.current?.();
@@ -142,8 +139,7 @@ export function DownloadDialog({ open, onOpenChange }: DownloadDialogProps) {
         setPreviewZoom((z) => clampPreviewZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)));
         return;
       }
-      // Plain scroll: accumulate delta, flip a page past a threshold. The cooldown
-      // limits a fast swipe to one page so the reader doesn't skip ahead.
+      // Accumulate scroll delta and flip a page past a threshold; the cooldown limits a fast swipe to one page.
       e.preventDefault();
       const nav = wheelNavRef.current;
       const now = performance.now();

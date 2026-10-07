@@ -28,9 +28,7 @@ const buildFormPdf = async (): Promise<Uint8Array> => {
   return doc.save({ useObjectStreams: false });
 };
 
-// Simulates what pdf.js saveDocument() produces for a /NeedAppearances
-// document: the value is written to /V but the appearance stream is
-// dropped.
+// Simulates pdf.js saveDocument() on a /NeedAppearances doc: value kept, AP stream dropped.
 const stripAppearance = async (
   doc: PDFDocument,
   fieldName: string,
